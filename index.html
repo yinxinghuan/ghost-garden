@@ -122,7 +122,7 @@
     #actions {
       position: fixed; bottom: 0; left: 0; right: 0;
       padding: 10px 16px 28px;
-      display: flex; justify-content: center; align-items: center; gap: 10px;
+      display: flex; justify-content: center; gap: 10px;
       background: linear-gradient(to top, rgba(6,2,20,0.85) 55%, transparent);
       z-index: 10;
     }
@@ -197,21 +197,19 @@
 
     /* ══ ? 按钮 & 玩法说明 ══ */
     #help-btn {
-      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-      width: 36px; height: 36px;
+      width: 32px; height: 32px; flex-shrink: 0; align-self: center;
       background: rgba(255,255,255,0.07);
       border: 1px solid rgba(160,120,255,0.28);
       border-radius: 50%;
-      color: rgba(200,170,255,0.7);
-      font-size: 15px; font-weight: 700;
+      color: rgba(200,170,255,0.65);
+      font-size: 14px; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; z-index: 11;
+      cursor: pointer; pointer-events: auto;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       transition: background .15s, transform .08s;
-      flex-shrink: 0;
     }
-    #help-btn:active { background: rgba(140,90,255,0.22); transform: translateY(-50%) scale(0.9); }
+    #help-btn:active { background: rgba(140,90,255,0.22); transform: scale(0.9); }
 
     #help-overlay {
       position: fixed; inset: 0; z-index: 100;
@@ -391,6 +389,7 @@
     <div id="fire-label"></div>
     <div id="fire-count">5</div>
   </div>
+  <button id="help-btn">?</button>
 </div>
 
 <!-- STATS -->
@@ -432,7 +431,6 @@
   <button class="abtn" id="btn-feed"></button>
   <button class="abtn" id="btn-play"></button>
   <button class="abtn" id="btn-rest"></button>
-  <button id="help-btn">?</button>
 </div>
 
 <script type="importmap">
