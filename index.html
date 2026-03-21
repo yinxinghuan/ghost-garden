@@ -213,6 +213,22 @@
     }
     #help-btn:active { background: rgba(140,90,255,0.22); transform: scale(0.9); }
 
+    /* ══ 音乐按钮 ══ */
+    #music-btn {
+      width: 32px; height: 32px; flex-shrink: 0;
+      align-self: flex-start; margin-top: 4px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 50%; color: #fff; font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: background .15s, transform .08s, opacity .2s;
+    }
+    #music-btn:active { background: rgba(140,90,255,0.22); transform: scale(0.9); }
+    #music-btn.muted { opacity: 0.45; }
+
     #help-overlay {
       position: fixed; inset: 0; z-index: 100;
       background: rgba(4,2,16,0.7);
@@ -391,6 +407,7 @@
     <div id="fire-label"></div>
     <div id="fire-count">5</div>
   </div>
+  <button id="music-btn" title="Music">♪</button>
   <button id="help-btn">?</button>
 </div>
 
@@ -601,6 +618,147 @@ const snd = (() => {
                         [800,1600,0.12,'square',0.12],[1000,2000,0.2,'sine',0.15]], 0.1),
     dayEnd:  () => play(220, 110, 0.6, 'sine', 0.08),
   };
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  BGM — Synthesizer Ambient Music (Web Audio API)
+// ═══════════════════════════════════════════════════════════
+const bgm = (() => {
+  let ctx = null, master = null;
+  let playing = false, muted = false;
+  let oscs = [], shimmerHandle = null, padHandle = null;
+
+  function initCtx() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+  }
+
+  // Synthetic reverb via impulse response
+  function makeReverb() {
+    const len = Math.floor(ctx.sampleRate * 3.2);
+    const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++)
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
+    }
+    const conv = ctx.createConvolver();
+    conv.buffer = buf;
+    return conv;
+  }
+
+  // Tone groups representing chord tones to emphasize
+  // All notes: A1 E2 A2 C3 D3 E3 G3 A3 B3 C4 E4
+  //             0  1  2  3  4  5  6  7  8  9 10
+  const VOICINGS = [
+    { idx: [0,2,3,5,7,10], vols: [0.055,0.045,0.035,0.030,0.022,0.014] }, // Am
+    { idx: [0,1,5,6,8,10], vols: [0.055,0.040,0.030,0.028,0.020,0.013] }, // Em
+    { idx: [0,2,3,5,7, 9], vols: [0.055,0.040,0.035,0.028,0.022,0.015] }, // Fmaj
+    { idx: [0,2,3,5,6, 9], vols: [0.055,0.042,0.032,0.028,0.022,0.015] }, // C
+  ];
+  let vi = 0;
+
+  function setGain(g, val, ramp = 3.5) {
+    g.gain.cancelScheduledValues(ctx.currentTime);
+    g.gain.setValueAtTime(g.gain.value, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(val, ctx.currentTime + ramp);
+  }
+
+  function applyVoicing() {
+    if (!playing) return;
+    const v = VOICINGS[vi % VOICINGS.length]; vi++;
+    // fade all out
+    oscs.forEach(({ g }) => setGain(g, 0, 2.5));
+    // fade voicing in after 2.5s
+    setTimeout(() => {
+      if (!playing) return;
+      v.idx.forEach((oi, i) => setGain(oscs[oi].g, v.vols[i], 5.0));
+    }, 2500);
+    padHandle = setTimeout(applyVoicing, 18000 + Math.random() * 6000);
+  }
+
+  function scheduleShimmer(reverb) {
+    if (!playing) return;
+    const freqs = [1046.5, 1174.7, 1318.5, 987.77, 880, 783.99, 659.25, 1396.9];
+    const freq  = freqs[Math.floor(Math.random() * freqs.length)];
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.028, ctx.currentTime + 0.12);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3.2);
+    o.connect(g); g.connect(reverb);
+    o.start(); o.stop(ctx.currentTime + 3.3);
+    shimmerHandle = setTimeout(() => scheduleShimmer(reverb), 4000 + Math.random() * 6000);
+  }
+
+  function start() {
+    if (playing) return;
+    playing = true;
+    initCtx();
+
+    master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(ctx.destination);
+
+    const reverb = makeReverb();
+    reverb.connect(master);
+    const dry = ctx.createGain();
+    dry.gain.value = 0.18;
+    dry.connect(master);
+
+    // Drone + pad oscillators — one per tone
+    const toneFreqs = [55, 82.41, 110, 130.81, 146.83, 164.81, 196, 220, 246.94, 261.63, 329.63];
+    toneFreqs.forEach((freq, i) => {
+      const g = ctx.createGain();
+      g.gain.value = 0;
+      g.connect(reverb);
+      if (i === 0) g.connect(dry); // drone goes dry too
+      // detuned pair for warmth
+      [-4, 4].forEach(detune => {
+        const o = ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = freq;
+        o.detune.value = detune;
+        o.connect(g);
+        o.start();
+      });
+      oscs.push({ g });
+    });
+
+    // Fade master in
+    master.gain.linearRampToValueAtTime(muted ? 0 : 0.55, ctx.currentTime + 5);
+
+    // Apply first voicing gently
+    const v0 = VOICINGS[0]; vi = 1;
+    setTimeout(() => {
+      if (!playing) return;
+      v0.idx.forEach((oi, i) => setGain(oscs[oi].g, v0.vols[i], 7));
+    }, 800);
+
+    // Start cycling voicings after initial settle
+    padHandle = setTimeout(applyVoicing, 22000);
+
+    // Shimmer bells start after 6s
+    shimmerHandle = setTimeout(() => scheduleShimmer(reverb), 6000 + Math.random() * 3000);
+  }
+
+  function toggle() {
+    if (!playing) { start(); muted = false; return false; }
+    muted = !muted;
+    if (master) {
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(muted ? 0 : 0.55, ctx.currentTime + 0.8);
+    }
+    return muted;
+  }
+
+  // Auto-start on first touch (respects browser autoplay policy)
+  const autoStart = () => { if (!playing) start(); document.removeEventListener('pointerdown', autoStart); };
+  document.addEventListener('pointerdown', autoStart);
+
+  return { start, toggle, get muted() { return muted; } };
 })();
 
 // ═══════════════════════════════════════════════════════════
@@ -2251,6 +2409,14 @@ updateSubDisplay();
 
 // ── 死亡重启
 document.getElementById('dead-retry').addEventListener('pointerdown', restartGame);
+
+// ── 音乐开关
+const musicBtn = document.getElementById('music-btn');
+musicBtn.addEventListener('pointerdown', e => {
+  e.stopPropagation();
+  const nowMuted = bgm.toggle();
+  musicBtn.classList.toggle('muted', nowMuted);
+});
 
 // ── 玩法说明开关
 const helpOverlay = document.getElementById('help-overlay');
