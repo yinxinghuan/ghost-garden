@@ -392,6 +392,41 @@
     <div id="splash-bar"></div>
   </div>
 </div>
+<script>
+// 进度条 + 消失逻辑放在普通 script 里，不依赖 module 加载完成
+(function() {
+  const bar     = document.getElementById('splash-bar');
+  const splashEl = document.getElementById('splash');
+  const imgEl   = document.getElementById('splash-img');
+  const noimg   = document.getElementById('splash-noimg');
+  const MIN_MS  = 2200;
+  bar.style.animation = 'gg-splash-bar 2.1s ease-out forwards';
+
+  let imgReady = false, timerReady = false;
+  function tryHide() {
+    if (!imgReady || !timerReady) return;
+    splashEl.classList.add('done');
+    setTimeout(function(){ splashEl.style.display = 'none'; }, 650);
+  }
+  function onImgLoaded() {
+    imgEl.classList.add('loaded');
+    noimg.style.display = 'none';
+    if (imgReady) return; imgReady = true; tryHide();
+  }
+  function onImgFail() {
+    if (imgReady) return; imgReady = true; tryHide();
+  }
+  imgEl.addEventListener('load',  onImgLoaded);
+  imgEl.addEventListener('error', onImgFail);
+  if (imgEl.complete) { imgEl.naturalWidth > 0 ? onImgLoaded() : onImgFail(); }
+
+  // 最短显示时间从脚本执行起算（此时 DOM 已就绪，比 module 早很多）
+  var elapsed = Date.now() - (window._ggStartTs || Date.now());
+  setTimeout(function(){ timerReady = true; tryHide(); }, Math.max(0, MIN_MS - elapsed));
+  // 安全兜底：3s 后无论如何消失
+  setTimeout(function(){ imgReady = true; timerReady = true; tryHide(); }, 3000);
+})();
+</script>
 
 <!-- TOP HUD -->
 <div id="hud">
@@ -1879,10 +1914,9 @@ function rebuildDomain() {
   flashEl.style.opacity = '1';
   setTimeout(() => { flashEl.style.opacity = '0'; }, 400);
 
-  // 清除旧的动态对象
+  // 清除旧的动态对象（事件保留，自然过期）
   treeList.forEach(m => scene.remove(m)); treeList.length = 0;
   tombstoneList.forEach(m => scene.remove(m)); tombstoneList.length = 0;
-  eventObjects.forEach(e => scene.remove(e.mesh)); eventObjects.length = 0;
 
   // 重建地面（新随机形状）
   buildIsland();
@@ -2425,47 +2459,7 @@ helpOverlay.addEventListener('pointerdown', e => {
   if (e.target === helpOverlay) helpOverlay.classList.remove('show');
 });
 
-// ── Splash 进度条动画 + 延迟消失
-{
-  const bar     = document.getElementById('splash-bar');
-  const splashEl = document.getElementById('splash');
-  const imgEl   = document.getElementById('splash-img');
-  const noimg   = document.getElementById('splash-noimg');
-  bar.style.animation = `gg-splash-bar 2.1s ease-out forwards`;
-
-  let imgReady = false, timerReady = false;
-
-  const hideSplash = () => {
-    if (!imgReady || !timerReady) return;
-    splashEl.classList.add('done');
-    setTimeout(() => { splashEl.style.display = 'none'; }, 650);
-  };
-
-  const onImgReady = () => {
-    if (imgReady) return;
-    imgReady = true;
-    hideSplash();
-  };
-  const onImgLoaded = () => {
-    imgEl.classList.add('loaded');
-    noimg.style.display = 'none';
-    onImgReady();
-  };
-
-  imgEl.addEventListener('load', onImgLoaded);
-  imgEl.addEventListener('error', onImgReady);
-  // Already cached — complete fires before listener registered
-  if (imgEl.complete && imgEl.naturalWidth > 0) onImgLoaded();
-  else if (imgEl.complete) onImgReady(); // error case
-
-  // Minimum display time (from page start)
-  const elapsed = Date.now() - window._ggStartTs;
-  const minDelay = Math.max(0, 2200 - elapsed);
-  setTimeout(() => { timerReady = true; hideSplash(); }, minDelay);
-
-  // Safety timeout — never block forever if image hangs
-  setTimeout(onImgReady, 5000);
-}
+// splash 逻辑已移至 DOM 中的普通 script 标签（加载更早，不依赖 module）
 
 setTimeout(() => { document.getElementById('hint').style.opacity='0'; }, 5000);
 
