@@ -1703,6 +1703,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 20,
+    req: {stat:'mood', min:25},
     reward() { gs.mood=Math.min(100,gs.mood+8); addFire(1); showPopup(t('popLostGhost'),'#c0a0ff'); },
   },
   // ── 灵菇
@@ -1749,6 +1750,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 8,
+    req: {stat:'energy', min:25},
     reward() { addFire(2); showPopup(t('popMeteor'),'#ffdd44'); },
   },
   // ── 灵光球
@@ -1769,6 +1771,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 22,
+    req: {stat:'energy', min:15},
     reward() { gs.energy=Math.min(100,gs.energy+22); addFire(1); showPopup(t('popSpiritOrb'),'#60c8ff'); },
   },
   // ── 灵晶
@@ -1791,6 +1794,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 18,
+    req: {stat:'energy', min:20},
     reward() { addFire(3); showPopup(t('popCrystal'),'#d0a0ff'); },
   },
   // ── 幽蝶
@@ -1824,6 +1828,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 20,
+    req: {stat:'mood', min:20},
     reward() { gs.mood=Math.min(100,gs.mood+12); showPopup(t('popButterfly'),'#ffb0f0'); },
   },
   // ── 灵钻（多轴陀螺 + 周期闪光）
@@ -1851,6 +1856,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 18,
+    req: {stat:'energy', min:30},
     reward() { addFire(4); showPopup(t('popGem'),'#ffd060'); },
   },
   // ── 幸运星（自由漂游，随机改向，自旋）
@@ -1881,6 +1887,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 20,
+    req: {stat:'mood', min:35},
     reward() { gs.mood=Math.min(100,gs.mood+15); addFire(1); showPopup(t('popStar'),'#ffe840'); },
   },
   // ── 能量环（竖直轮子高速旋转 + 扩缩脉冲）
@@ -1916,6 +1923,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 18,
+    req: {stat:'energy', min:25},
     reward() { gs.energy=Math.min(100,gs.energy+30); showPopup(t('popEnergy'),'#40ffcc'); },
   },
   // ── 糖果（落地三次弹跳后静止）
@@ -1975,6 +1983,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 25,
+    req: {stat:'mood', min:15},
     reward() { gs.mood=Math.min(100,gs.mood+18); showPopup(t('popFlower'),'#ff80c0'); },
   },
   // ── 灵笼（钟摆摆动 + 火焰闪烁 + 缓慢漂移）
@@ -2017,6 +2026,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 22,
+    req: {stat:'energy', min:20},
     reward() { addFire(2); gs.energy=Math.min(100,gs.energy+15); showPopup(t('popLantern'),'#ffd080'); },
   },
 ];
@@ -2038,6 +2048,14 @@ function spawnEvent() {
 }
 
 function collectEvent(evt) {
+  if (evt.def.req) {
+    const {stat, min} = evt.def.req;
+    if (gs[stat] < min) {
+      const label = {mood: t('statMood'), energy: t('statEnergy'), hunger: t('statHunger')}[stat];
+      showPopup(`${label} < ${min}`, '#ff8080', 2.5);
+      return;
+    }
+  }
   evt.def.reward(); scene.remove(evt.mesh);
   const idx = eventObjects.indexOf(evt); if (idx>-1) eventObjects.splice(idx,1);
 }
