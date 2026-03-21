@@ -658,10 +658,8 @@ const bgm = (() => {
   ];
   let vi = 0;
 
-  function setGain(g, val, ramp = 3.5) {
-    g.gain.cancelScheduledValues(ctx.currentTime);
-    g.gain.setValueAtTime(g.gain.value, ctx.currentTime);
-    g.gain.linearRampToValueAtTime(val, ctx.currentTime + ramp);
+  function setGain(g, val, timeConst = 1.5) {
+    g.gain.setTargetAtTime(val, ctx.currentTime, timeConst);
   }
 
   function applyVoicing() {
@@ -727,7 +725,7 @@ const bgm = (() => {
     });
 
     // Fade master in
-    master.gain.linearRampToValueAtTime(muted ? 0 : 0.55, ctx.currentTime + 5);
+    master.gain.setTargetAtTime(0.55, ctx.currentTime + 0.5, 1.5);
 
     // Apply first voicing gently
     const v0 = VOICINGS[0]; vi = 1;
@@ -746,11 +744,7 @@ const bgm = (() => {
   function toggle() {
     if (!playing) { start(); muted = false; return false; }
     muted = !muted;
-    if (master) {
-      master.gain.cancelScheduledValues(ctx.currentTime);
-      master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
-      master.gain.linearRampToValueAtTime(muted ? 0 : 0.55, ctx.currentTime + 0.8);
-    }
+    if (master) master.gain.setTargetAtTime(muted ? 0 : 0.55, ctx.currentTime, 0.4);
     return muted;
   }
 
