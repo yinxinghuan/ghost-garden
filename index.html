@@ -2936,8 +2936,8 @@ function spendFire(n) {
 //  STATS UPDATE
 // ═══════════════════════════════════════════════════════════
 function updateStats(dt) {
-  // 白天过场期间暂停所有状态更新
-  if (gs.inDayScene) return;
+  // 白天过场 / 开场过场期间暂停所有状态更新
+  if (gs.inDayScene || _introActive) return;
 
   gs.mood   = Math.max(0, gs.mood   - (DECAY.mood/60)   * dt);
   gs.hunger = Math.max(0, gs.hunger - (DECAY.hunger/60) * dt);
