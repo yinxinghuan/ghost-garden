@@ -674,20 +674,91 @@ ghostGlow.position.set(0, 2.4, 0.4);
 scene.add(ghostGlow);
 
 // ═══════════════════════════════════════════════════════════
-//  STARS
+//  STARS + GALAXY + FIREFLIES
 // ═══════════════════════════════════════════════════════════
 function buildStars() {
   const verts = [];
   for (let i = 0; i < 280; i++) {
     const theta = Math.random() * Math.PI * 2;
-    const phi   = Math.acos(Math.random() * 0.6);  // upper hemisphere
+    const phi   = Math.acos(Math.random() * 0.6);
     const r     = 55 + Math.random() * 20;
     verts.push(r*Math.sin(phi)*Math.cos(theta), r*Math.cos(phi), r*Math.sin(phi)*Math.sin(theta));
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
-  const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.28, sizeAttenuation: true, transparent: true, opacity: 0.75 });
+  const mat = new THREE.PointsMaterial({ color:0xffffff, size:0.28, sizeAttenuation:true, transparent:true, opacity:0.75 });
   scene.add(new THREE.Points(geo, mat));
+}
+
+// ── 银河粒子云（3层叠加，蓝紫暖白混合）
+const galaxyLayers = [];
+function buildGalaxy() {
+  const defs = [
+    { n:600, col:0xccdeff, size:0.14, opa:0.50, rMin:48, rMax:70, phiMax:0.50 },
+    { n:350, col:0x8899ff, size:0.12, opa:0.25, rMin:50, rMax:68, phiMax:0.36 },
+    { n:220, col:0xffccee, size:0.11, opa:0.18, rMin:52, rMax:66, phiMax:0.26 },
+  ];
+  defs.forEach((d, i) => {
+    const verts = [];
+    for (let k = 0; k < d.n; k++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi   = Math.random() * d.phiMax;
+      const r     = d.rMin + Math.random() * (d.rMax - d.rMin);
+      verts.push(r*Math.sin(phi)*Math.cos(theta), r*Math.cos(phi), r*Math.sin(phi)*Math.sin(theta));
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    const mat = new THREE.PointsMaterial({ color:d.col, size:d.size, sizeAttenuation:true, transparent:true, opacity:d.opa, depthWrite:false });
+    const pts = new THREE.Points(geo, mat);
+    scene.add(pts);
+    galaxyLayers.push({ pts, mat, base:d.opa, phase: i * 1.3 });
+  });
+}
+
+// ── 萤火虫（近地浮动小光点）
+const fireflies = [];
+function buildFireflies() {
+  const COLS = [0x88ffaa, 0xaaffcc, 0x99ffdd, 0x66ff99, 0xccffaa, 0xaaeeff, 0xddffaa];
+  for (let i = 0; i < 24; i++) {
+    const col = COLS[i % COLS.length];
+    const mat = new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.9 });
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.032, 4, 3), mat);
+    const angle = Math.random() * Math.PI * 2;
+    const r     = 0.6 + Math.random() * 5.5;
+    const baseY = 0.5 + Math.random() * 3.5;
+    mesh.position.set(Math.cos(angle)*r, baseY, Math.sin(angle)*r);
+    mesh.userData = {
+      vx: (Math.random()-.5)*0.55, vz: (Math.random()-.5)*0.55,
+      phase: Math.random()*Math.PI*2,
+      ps: 1.0 + Math.random()*2.5,
+      baseY,
+    };
+    scene.add(mesh);
+    fireflies.push(mesh);
+  }
+}
+
+function updateAmbientFX(totalT) {
+  // 银河微闪烁
+  galaxyLayers.forEach(l => {
+    l.mat.opacity = l.base * (0.72 + 0.28 * Math.sin(totalT * 0.38 + l.phase));
+  });
+  // 萤火虫飘动
+  const hide = gs.inDayScene;
+  const dt_ = 1/60; // 用固定值避免参数传递（实际 dt 在 animate 里）
+  fireflies.forEach(f => {
+    f.visible = !hide;
+    if (hide) return;
+    const d = f.userData;
+    const pulse = 0.5 + 0.5 * Math.sin(totalT * d.ps + d.phase);
+    f.position.y = d.baseY + Math.sin(totalT * d.ps * 0.6 + d.phase) * 0.55;
+    f.material.opacity = 0.18 + pulse * 0.82;
+    // 缓慢漂移（每帧微量移动）
+    f.position.x += d.vx * 0.016;
+    f.position.z += d.vz * 0.016;
+    if (Math.abs(f.position.x) > 7) d.vx *= -1;
+    if (Math.abs(f.position.z) > 7) d.vz *= -1;
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2097,6 +2168,7 @@ function animate(ts) {
   updateEvents(dt, totalT);
   updateWish(dt);
   tickParticles(dt);
+  updateAmbientFX(totalT);
 
   if (ghostGroup) {
     const BASE_Y=2.2, hover=Math.sin(totalT*1.75)*.11;
@@ -2134,6 +2206,8 @@ function animate(ts) {
 //  BUILD WORLD
 // ═══════════════════════════════════════════════════════════
 buildStars();
+buildGalaxy();
+buildFireflies();
 buildIsland();
 buildChurch();
 
