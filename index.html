@@ -191,6 +191,9 @@
       font-size: 15px; letter-spacing: 6px; font-weight: 300;
       color: rgba(255,245,200,0.95);
       text-shadow: 0 0 20px rgba(255,200,80,1), 0 0 40px rgba(255,100,20,0.5);
+    }
+    #day-announce.en {
+      font-size: 20px; font-weight: 500; letter-spacing: 5px;
       pointer-events: none; z-index: 93;
       opacity: 0; white-space: nowrap;
     }
@@ -2740,6 +2743,7 @@ function applyScenePhase(phase) {
 }
 
 const announceEl = document.getElementById('day-announce');
+if (window._loc === 'en') announceEl.classList.add('en');
 
 // 过场：幽灵消失，Three.js 场景经历日出→正午→日落→入夜，太阳弧线划过（共6秒）
 function triggerDawnTransition() {
@@ -2749,7 +2753,7 @@ function triggerDawnTransition() {
   // 重置 CSS 动画
   announceEl.classList.remove('show');
   void announceEl.offsetWidth;
-  announceEl.textContent = `第 ${gs.day} 天`;
+  announceEl.textContent = t('dayN', {n: gs.day});
 
   // Three.js 场景阶段序列
   applyScenePhase('dawn');
