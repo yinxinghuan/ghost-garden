@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title id="page-title">幽灵庄园</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;500&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       overflow: hidden; background: #1a1240;
-      font-family: 'Ma Shan Zheng', 'PingFang SC', serif;
+      font-family: 'EB Garamond', 'Noto Serif SC', serif;
       color: #e0d0ff; user-select: none;
       border-radius: 24px;
     }
@@ -349,7 +349,7 @@
       position: fixed; inset: 0; z-index: 998;
       background: #000; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      font-family: 'Ma Shan Zheng', serif;
+      font-family: 'EB Garamond', 'Noto Serif SC', serif;
       opacity: 1;
       transition: background 2.2s ease, opacity 1.2s ease;
       pointer-events: all;
@@ -389,7 +389,7 @@
     #intro-skip {
       position: absolute; bottom: 28px; right: 24px;
       background: transparent; border: 1px solid rgba(180,150,255,0.25);
-      color: rgba(180,150,255,0.45); font-family: 'Ma Shan Zheng', serif;
+      color: rgba(180,150,255,0.45); font-family: 'EB Garamond', 'Noto Serif SC', serif;
       font-size: 13px; padding: 5px 16px; border-radius: 20px;
       cursor: pointer; touch-action: none;
       -webkit-tap-highlight-color: transparent;
@@ -497,33 +497,20 @@
 
 <!-- INTRO CINEMATIC -->
 <div id="intro" style="display:none">
-  <div class="intro-page" id="intro-p0">
-    <p class="intro-text">那座古老的墓园，</p>
-    <p class="intro-text">已在这片土地上守望了三百年。</p>
-  </div>
-  <div class="intro-page" id="intro-p1">
-    <p class="intro-text">然而推土机的轰鸣声，</p>
-    <p class="intro-text">正在十三天外等待……</p>
-    <p class="intro-sub">时日无多，墓园将被夷为平地。</p>
-  </div>
+  <div class="intro-page" id="intro-p0"></div>
+  <div class="intro-page" id="intro-p1"></div>
   <div class="intro-page" id="intro-p2">
-    <p class="intro-text">就在这最后的时刻，</p>
-    <p class="intro-text">古碑中沉睡的灵气悄然凝聚——</p>
-    <p class="intro-ghost-lbl" id="intro-ghost-lbl">小幽 诞生了。</p>
+    <p class="intro-ghost-lbl" id="intro-ghost-lbl"></p>
   </div>
-  <div class="intro-page" id="intro-p3">
-    <p class="intro-text">守护这座墓园，</p>
-    <p class="intro-text">在十三天内长成完全体，</p>
-    <p class="intro-sub">便能与命运抗争到底。</p>
-  </div>
+  <div class="intro-page" id="intro-p3"></div>
   <div id="intro-progress">
     <div class="intro-dot on"></div>
     <div class="intro-dot"></div>
     <div class="intro-dot"></div>
     <div class="intro-dot"></div>
   </div>
-  <div id="intro-tap">轻触翻页</div>
-  <button id="intro-skip">跳过</button>
+  <div id="intro-tap"></div>
+  <button id="intro-skip"></button>
 </div>
 
 <!-- TOP HUD -->
@@ -630,6 +617,14 @@ window._ggStartTs = Date.now();
       popEnergy:'能量环！精力+30', popCandy:'甜甜糖果！饱食+25',
       popFlower:'魔法花！心情+18', popLantern:'灵笼！+6灵火 精力+15',
       wishPet:'想被摸摸~', wishFeed:'有点饿了...', wishPlay:'我们玩耍吧！', wishRest:'有点累了...',
+      introP: [
+        ['那座古老的墓园，', '已在这片土地上守望了三百年。'],
+        ['然而推土机的轰鸣声，', '正在十三天外等待……', '时日无多，墓园将被夷为平地。'],
+        ['就在这最后的时刻，', '古碑中沉睡的灵气悄然凝聚——'],
+        ['守护这座墓园，', '在十三天内长成完全体，', '便能与命运抗争到底。'],
+      ],
+      introBirth: '小幽 诞生了。',
+      introTap: '轻触翻页', introSkip: '跳过',
       evolve:'进化！{n}降临，守护之力增强',
       dangerWarn:'危险！{stat}即将耗尽',
       deadTitle:'小幽消散了……墓园沦陷。',
@@ -692,6 +687,14 @@ window._ggStartTs = Date.now();
       popEnergy:'Energy ring! Energy+30', popCandy:'Sweet candy! Food+25',
       popFlower:'Magic flower! Mood+18', popLantern:'Spirit lantern! +6 Flame Energy+15',
       wishPet:'Want pets~', wishFeed:'A bit hungry...', wishPlay:"Let's play!", wishRest:'Feeling tired...',
+      introP: [
+        ['This ancient cemetery', 'has stood watch for three centuries.'],
+        ['But the sound of bulldozers', 'waits just thirteen days away…', 'Its time is running out.'],
+        ['In this final moment,', 'the spirit sleeping in ancient stones stirs—'],
+        ['Protect this cemetery.', 'Grow to your full power', 'within thirteen days.'],
+      ],
+      introBirth: '"Boo" is born.',
+      introTap: 'tap to continue', introSkip: 'Skip',
       evolve:'Evolution! {n} arrived — protection grows',
       dangerWarn:'{stat} is running out!',
       deadTitle:'Boo faded… the cemetery is lost.',
@@ -2847,10 +2850,29 @@ function showIntroOnce() {
   const tapHint = document.getElementById('intro-tap');
   const skipBtn = document.getElementById('intro-skip');
 
-  // 幽灵名字
-  lblEl.textContent = window._loc==='en' ? `"${t('ghostName')}" is born.` : `小幽 诞生了。`;
-  skipBtn.textContent = window._loc==='en' ? 'Skip' : '跳过';
-  tapHint.textContent = window._loc==='en' ? 'tap to continue' : '轻触翻页';
+  // 用 i18n 填充页面文本
+  const introPages = t('introP');
+  pages.forEach((pg, i) => {
+    if (i === 2) return; // 出生页单独处理
+    const lines = introPages[i] || [];
+    pg.innerHTML = lines.map((l, li) =>
+      `<p class="${li === lines.length-1 && i===1 ? 'intro-sub' : 'intro-text'}">${l}</p>`
+    ).join('');
+    // 第4页最后两行也是正文，第一行普通，后两行用 intro-sub
+    if (i === 3) {
+      pg.innerHTML = lines.map((l, li) =>
+        `<p class="${li === 0 ? 'intro-text' : 'intro-sub'}">${l}</p>`
+      ).join('');
+    }
+  });
+  // 出生页两行引子
+  const birthLines = introPages[2] || [];
+  const birthPre = birthLines.map(l=>`<p class="intro-text">${l}</p>`).join('');
+  document.getElementById('intro-p2').insertAdjacentHTML('afterbegin', birthPre);
+
+  lblEl.textContent = t('introBirth');
+  skipBtn.textContent = t('introSkip');
+  tapHint.textContent = t('introTap');
 
   // 隐藏游戏 UI，避免透明时显示干扰
   const gameEls = ['hud','stats','actions','hint'].map(id => document.getElementById(id));
