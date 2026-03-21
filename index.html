@@ -1726,7 +1726,7 @@ function triggerDawnTransition() {
 
   // Three.js 场景阶段序列
   applyScenePhase('dawn');
-  setTimeout(() => applyScenePhase('day'),  900);
+  setTimeout(() => { applyScenePhase('day'); rebuildDomain(); }, 900); // 正午重建场景
   setTimeout(() => applyScenePhase('dusk'), 4000);
   setTimeout(() => applyScenePhase('night'),5500);
 
@@ -1761,7 +1761,7 @@ function updateStats(dt) {
   gs.energy = Math.max(0, gs.energy - (DECAY.energy/60) * dt);
   Object.keys(gs.cd).forEach(k => { if(gs.cd[k]>0) gs.cd[k]-=dt; });
 
-  const DAY_LEN = 120; // 秒（一夜的游戏时长）
+  const DAY_LEN = 60; // 秒（一夜的游戏时长）
   gs.dayTimer += dt;
   // 进度条：夜晚剩余时间
   const frac = gs.dayTimer / DAY_LEN;
@@ -1770,7 +1770,8 @@ function updateStats(dt) {
     gs.dayTimer = 0; gs.day++;
     updateSubDisplay();
     snd.dayEnd();
-    triggerDawnTransition();
+    checkLevel();          // 按天数判断升级
+    triggerDawnTransition(); // 白天过场（内含场景重建）
     // 随机熄灭一根蜡烛
     const lit = candleSlots.filter(s=>s.lit);
     if (lit.length > 1) dimCandle(lit[Math.floor(Math.random()*lit.length)]);
@@ -1871,18 +1872,15 @@ function restartGame() {
 }
 
 function checkLevel() {
-  const thresholds = [0, 90, 240];
-  const newLv = gs.totalHappy>=thresholds[2] ? 3 : gs.totalHappy>=thresholds[1] ? 2 : 1;
+  // 按天数升级：第4天→成灵，第8天→大灵
+  const newLv = gs.day >= 8 ? 3 : gs.day >= 4 ? 2 : 1;
   if (newLv > gs.level) {
     gs.level = newLv;
     buildGhost(gs.level);
     snd.levelUp();
-    setTimeout(() => {
-      rebuildDomain();
-      showPopup(t('evolve', {n: t('stage'+gs.level)}), '#ffd060');
-    }, 300);
+    // 进化弹窗在场景重建后显示（triggerDawnTransition 里 900ms 时重建）
+    setTimeout(() => showPopup(t('evolve', {n: t('stage'+gs.level)}), '#ffd060'), 1200);
   }
-  const names = ['','幼灵','成灵','大灵'];
   updateSubDisplay();
 }
 
@@ -1942,7 +1940,7 @@ function doAction(type) {
       setTimeout(()=>{ gs.resting=false; },3000);
       break;
   }
-  checkLevel();
+  updateSubDisplay();
 }
 
 document.getElementById('btn-pet').addEventListener('pointerdown',  ()=>doAction('pet'));
