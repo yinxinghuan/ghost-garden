@@ -1876,6 +1876,110 @@ canvas.addEventListener('pointerdown', e => {
 });
 
 // ═══════════════════════════════════════════════════════════
+//  IDLE ACTION ANIMATIONS
+// ═══════════════════════════════════════════════════════════
+let idleAnim = null;   // { type, t, dur }
+let idleNextT = 6 + Math.random() * 8;
+
+// ease in-out (smooth step)
+const eio = p => p < .5 ? 2*p*p : 1-2*(1-p)*(1-p);
+
+function tickIdleAnim(dt, BASE_Y, hover) {
+  // 只在自由飘浮时触发
+  if (gs.playing || gs.resting || gs.bounceT < 1.5 || !ghostGroup) return false;
+
+  if (!idleAnim) {
+    idleNextT -= dt;
+    if (idleNextT <= 0) {
+      // 危险时只颤抖，否则按心情权重选
+      let pool;
+      if (gs.dangerTimer > 4) {
+        pool = ['shiver'];
+      } else if (gs.mood > 65) {
+        pool = ['spin','puff','lookAround','drift','nod','spin'];
+      } else {
+        pool = ['nod','lookAround','drift','shiver'];
+      }
+      const type = pool[Math.floor(Math.random()*pool.length)];
+      const durs = { spin:2.0, nod:1.0, lookAround:2.2, puff:1.3, drift:2.6, shiver:0.9 };
+      idleAnim = { type, t: 0, dur: durs[type] };
+      idleNextT = 7 + Math.random() * 10;
+    }
+  }
+
+  if (!idleAnim) return false;
+
+  idleAnim.t += dt;
+  const p  = Math.min(1, idleAnim.t / idleAnim.dur);
+  const sp = eio(p);
+
+  switch (idleAnim.type) {
+    case 'spin':
+      ghostGroup.position.y  = BASE_Y + hover;
+      ghostGroup.rotation.y  = sp * Math.PI * 2;
+      ghostGroup.rotation.z  = Math.sin(totalT*.85)*.03;
+      ghostGroup.rotation.x  = Math.sin(totalT*1.1)*.025;
+      ghostGroup.scale.setScalar(1);
+      break;
+
+    case 'nod': {
+      const a = sp < .5 ? sp*2*.38 : (1-sp)*2*.38;
+      ghostGroup.position.y  = BASE_Y + hover;
+      ghostGroup.rotation.x  = a;
+      ghostGroup.rotation.y  = Math.sin(totalT*.35)*.12;
+      ghostGroup.rotation.z  = Math.sin(totalT*.85)*.03;
+      ghostGroup.scale.setScalar(1);
+      break;
+    }
+
+    case 'lookAround': {
+      let yr;
+      if      (p < .3) yr = -(p/.3)*.85;
+      else if (p < .7) yr = -.85 + ((p-.3)/.4)*1.7;
+      else             yr =  .85 - ((p-.7)/.3)*.85;
+      ghostGroup.position.y  = BASE_Y + hover;
+      ghostGroup.rotation.y  = yr;
+      ghostGroup.rotation.x  = Math.sin(totalT*1.1)*.025;
+      ghostGroup.rotation.z  = Math.sin(totalT*.85)*.03;
+      ghostGroup.scale.setScalar(1);
+      break;
+    }
+
+    case 'puff': {
+      const s = 1 + (sp < .45 ? (sp/.45)*.2 : ((1-sp)/.55)*.2);
+      ghostGroup.scale.setScalar(s);
+      ghostGroup.position.y  = BASE_Y + hover + (sp < .45 ? (sp/.45)*.18 : 0);
+      ghostGroup.rotation.y  = Math.sin(totalT*.35)*.12;
+      ghostGroup.rotation.x  = Math.sin(totalT*1.1)*.025;
+      ghostGroup.rotation.z  = Math.sin(totalT*.85)*.03;
+      break;
+    }
+
+    case 'drift': {
+      const rise = Math.sin(p * Math.PI) * .5;
+      ghostGroup.position.y  = BASE_Y + hover + rise;
+      ghostGroup.rotation.y  = Math.sin(totalT*.35)*.12 + Math.sin(p*Math.PI)*.35;
+      ghostGroup.rotation.z  = Math.sin(p*Math.PI*2)*.07;
+      ghostGroup.rotation.x  = Math.sin(totalT*1.1)*.025;
+      ghostGroup.scale.setScalar(1);
+      break;
+    }
+
+    case 'shiver': {
+      ghostGroup.position.y  = BASE_Y + hover;
+      ghostGroup.rotation.z  = Math.sin(idleAnim.t*30)*.13*(1-p);
+      ghostGroup.rotation.x  = Math.sin(idleAnim.t*22)*.07*(1-p);
+      ghostGroup.rotation.y  = Math.sin(totalT*.35)*.12;
+      ghostGroup.scale.setScalar(1);
+      break;
+    }
+  }
+
+  if (p >= 1) { idleAnim = null; ghostGroup.scale.setScalar(1); }
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════
 //  ANIMATION LOOP
 // ═══════════════════════════════════════════════════════════
 let lastTs=0, totalT=0;
@@ -1907,11 +2011,12 @@ function animate(ts) {
       const b = Math.sin(gs.bounceT*9)*.22*Math.max(0,1-gs.bounceT*.85);
       ghostGroup.position.y = BASE_Y+hover+Math.max(0,b);
       ghostGroup.rotation.z = Math.sin(totalT*4)*.08;
-    } else {
+    } else if (!tickIdleAnim(dt, BASE_Y, hover)) {
       ghostGroup.position.y = BASE_Y+hover;
       ghostGroup.rotation.z = Math.sin(totalT*.85)*.03;
       ghostGroup.rotation.x = Math.sin(totalT*1.1)*.025;
       ghostGroup.rotation.y = Math.sin(totalT*.35)*.12;
+      ghostGroup.scale.setScalar(1);
     }
     ghostGroup.position.x = .3+Math.sin(totalT*.55)*.08;
     ghostGroup.position.z = .5+Math.cos(totalT*.45)*.06;
