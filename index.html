@@ -2162,6 +2162,7 @@ const EVENT_DEFS = [
 ];
 
 function spawnEvent() {
+  if (_introActive) { eventSpawnIn = 3; return; }
   if (eventObjects.length >= 4) { eventSpawnIn = 4 + Math.random()*4; return; }
   const def = EVENT_DEFS[Math.floor(Math.random()*EVENT_DEFS.length)];
   const mesh = def.build();
@@ -2252,6 +2253,7 @@ const enemyObjects = [];
 let enemySpawnIn = 35 + Math.random()*20;
 
 function spawnEnemy() {
+  if (_introActive) { enemySpawnIn = 5; return; }
   if (enemyObjects.length >= 2) { enemySpawnIn = 20 + Math.random()*15; return; }
   if (gs.day < 2 && Math.random() < .7) { enemySpawnIn = 25+Math.random()*10; return; }
   // 天数越多敌人越频繁
@@ -2928,9 +2930,11 @@ function restartGame() {
 
 // ── INTRO CINEMATIC（首次进入时展示）
 let _introShown = false;
+let _introActive = false;
 function showIntroOnce() {
   if (_introShown) return;
   _introShown = true;
+  _introActive = true;
 
   const el      = document.getElementById('intro');
   const pages   = [...el.querySelectorAll('.intro-page')];
@@ -3044,6 +3048,7 @@ function showIntroOnce() {
 
   function dismiss() {
     if (pageIdx === 2) leaveBirthScene();
+    _introActive = false;
     gameEls.forEach(e => { if(e) e.style.visibility=''; });
     el.classList.add('done');
     setTimeout(() => { el.style.display='none'; el.classList.remove('done'); }, 1200);
