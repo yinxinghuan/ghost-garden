@@ -1821,155 +1821,190 @@ const EVENT_DEFS = [
     ttl: 20,
     reward() { gs.mood=Math.min(100,gs.mood+12); showPopup(t('popButterfly'),'#ffb0f0'); },
   },
-  // ── 灵钻
+  // ── 灵钻（多轴陀螺 + 周期闪光）
   {
     type: 'ghostGem',
     build() {
       const g = new THREE.Group();
-      const mat = new THREE.MeshLambertMaterial({color:0xffd060,emissive:0xff9900,emissiveIntensity:1.5});
-      const top = new THREE.Mesh(new THREE.ConeGeometry(.22,.28,6), mat);
-      top.position.y=.14; g.add(top);
-      const bot = new THREE.Mesh(new THREE.ConeGeometry(.22,.18,6), mat);
-      bot.rotation.x=Math.PI; bot.position.y=-.09; g.add(bot);
-      const pl=new THREE.PointLight(0xffcc00,2.5,4); pl.position.set(0,.1,0); g.add(pl);
+      const mat = new THREE.MeshLambertMaterial({color:0xffd060,emissive:0xff9900,emissiveIntensity:1.8});
+      const top = new THREE.Mesh(new THREE.ConeGeometry(.22,.30,6), mat);
+      top.position.y=.15; g.add(top);
+      const bot = new THREE.Mesh(new THREE.ConeGeometry(.22,.20,6), mat);
+      bot.rotation.x=Math.PI; bot.position.y=-.10; g.add(bot);
+      // Orbiting ring of mini gems
+      for(let i=0;i<6;i++){
+        const a=i/6*Math.PI*2;
+        const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.055,0),
+          new THREE.MeshLambertMaterial({color:0xffeeaa,emissive:0xffcc44,emissiveIntensity:2.0}));
+        gem.position.set(Math.cos(a)*.38, 0, Math.sin(a)*.38);
+        g.add(gem);
+      }
+      const pl=new THREE.PointLight(0xffcc00,2.5,4); pl.position.set(0,0,0); g.add(pl);
       g.position.set((Math.random()-.5)*4, 3.2, (Math.random()-.5)*4);
-      g.userData.anim='hover'; g.userData.baseY=3.2;
+      g.userData.anim='gyro'; g.userData.baseY=3.2; g.userData.flashT=0;
       return g;
     },
     ttl: 18,
     reward() { addFire(10); showPopup(t('popGem'),'#ffd060'); },
   },
-  // ── 幸运星
+  // ── 幸运星（自由漂游，随机改向，自旋）
   {
     type: 'luckyStar',
     build() {
       const g = new THREE.Group();
-      // Star shape using 5 cones
-      const mat = new THREE.MeshLambertMaterial({color:0xffe840,emissive:0xffcc00,emissiveIntensity:1.8});
+      const mat = new THREE.MeshLambertMaterial({color:0xffe840,emissive:0xffcc00,emissiveIntensity:2.0});
       for(let i=0;i<5;i++){
         const a=i/5*Math.PI*2 - Math.PI/2;
-        const pt=new THREE.Mesh(new THREE.ConeGeometry(.09,.32,5), mat);
-        pt.position.set(Math.cos(a)*.22, Math.sin(a)*.22, 0);
+        const pt=new THREE.Mesh(new THREE.ConeGeometry(.10,.34,5), mat);
+        pt.position.set(Math.cos(a)*.24, Math.sin(a)*.24, 0);
         pt.rotation.z=-a + Math.PI/2;
         g.add(pt);
       }
-      const core=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),
-        new THREE.MeshLambertMaterial({color:0xffffa0,emissive:0xffee00,emissiveIntensity:2.0}));
+      const core=new THREE.Mesh(new THREE.SphereGeometry(.15,8,6),
+        new THREE.MeshLambertMaterial({color:0xffffa0,emissive:0xffee00,emissiveIntensity:2.5}));
       g.add(core);
-      const pl=new THREE.PointLight(0xffee44,2.0,4); pl.position.set(0,0,0); g.add(pl);
-      g.position.set((Math.random()-.5)*4, 3.5, (Math.random()-.5)*4);
-      g.userData.anim='hover'; g.userData.baseY=3.5;
+      const pl=new THREE.PointLight(0xffee44,2.2,5); pl.position.set(0,0,0); g.add(pl);
+      const ang = Math.random()*Math.PI*2;
+      const spd = 0.6+Math.random()*.5;
+      g.position.set((Math.random()-.5)*5, 3.2+Math.random()*.8, (Math.random()-.5)*5);
+      g.userData.anim='wander'; g.userData.baseY=g.position.y;
+      g.userData.vx=Math.cos(ang)*spd; g.userData.vz=Math.sin(ang)*spd;
+      g.userData.dirT=0;
       return g;
     },
-    ttl: 16,
+    ttl: 20,
     reward() { gs.mood=Math.min(100,gs.mood+15); addFire(3); showPopup(t('popStar'),'#ffe840'); },
   },
-  // ── 能量环
+  // ── 能量环（竖直轮子高速旋转 + 扩缩脉冲）
   {
     type: 'energyRing',
     build() {
       const g = new THREE.Group();
-      // Ring using torus-like cylinder segments
-      const mat = new THREE.MeshLambertMaterial({color:0x40ffcc,emissive:0x00ffaa,emissiveIntensity:1.6,transparent:true,opacity:.85});
-      for(let i=0;i<10;i++){
-        const a=i/10*Math.PI*2;
-        const seg=new THREE.Mesh(new THREE.SphereGeometry(.07,6,5), mat);
-        seg.position.set(Math.cos(a)*.36, 0, Math.sin(a)*.36);
+      const mat = new THREE.MeshLambertMaterial({color:0x40ffcc,emissive:0x00ffaa,emissiveIntensity:1.8,transparent:true,opacity:.90});
+      // Ring in XY plane (will spin around Z = vertical wheel)
+      for(let i=0;i<12;i++){
+        const a=i/12*Math.PI*2;
+        const seg=new THREE.Mesh(new THREE.SphereGeometry(.075,6,5), mat.clone());
+        seg.position.set(Math.cos(a)*.42, Math.sin(a)*.42, 0);
         g.add(seg);
       }
-      const inner=new THREE.Mesh(new THREE.SphereGeometry(.10,8,6),
-        new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x80ffee,emissiveIntensity:2.5}));
-      g.add(inner);
-      const pl=new THREE.PointLight(0x00ffcc,2.2,4); pl.position.set(0,0,0); g.add(pl);
+      // Spokes
+      const spoke=new THREE.MeshLambertMaterial({color:0x00ffcc,emissive:0x00ffaa,emissiveIntensity:1.2,transparent:true,opacity:.5});
+      for(let i=0;i<4;i++){
+        const a=i/4*Math.PI*2;
+        const s=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.84,4), spoke);
+        s.rotation.z=a; g.add(s);
+      }
+      const core=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),
+        new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x80ffee,emissiveIntensity:3.0}));
+      g.add(core);
+      const pl=new THREE.PointLight(0x00ffcc,2.5,5); pl.position.set(0,0,0); g.add(pl);
       g.position.set((Math.random()-.5)*3, 2.8, (Math.random()-.5)*3);
-      g.userData.anim='pulse'; g.userData.baseY=2.8;
+      // Tilt the ring to vertical (spin around world Y looks like a wheel)
+      g.rotation.x = Math.PI/2;
+      g.userData.anim='halo'; g.userData.baseY=2.8;
       return g;
     },
     ttl: 18,
     reward() { gs.energy=Math.min(100,gs.energy+30); showPopup(t('popEnergy'),'#40ffcc'); },
   },
-  // ── 糖果
+  // ── 糖果（落地三次弹跳后静止）
   {
     type: 'candyDrop',
     build() {
       const g = new THREE.Group();
       const mat = new THREE.MeshLambertMaterial({color:0xff80c0,emissive:0xff2080,emissiveIntensity:.9});
-      const body=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8), mat);
+      const body=new THREE.Mesh(new THREE.SphereGeometry(.24,10,8), mat);
       g.add(body);
-      // Stripe
-      const smat=new THREE.MeshLambertMaterial({color:0xffffff,emissive:0xffccee,emissiveIntensity:.5});
+      const smat=new THREE.MeshLambertMaterial({color:0xffffff,emissive:0xffccee,emissiveIntensity:.6});
       for(let i=0;i<3;i++){
-        const ring=new THREE.Mesh(new THREE.TorusGeometry(.22,.035,6,12), smat);
-        ring.rotation.x=Math.PI/2; ring.position.y=(i-1)*.12; g.add(ring);
+        const ring=new THREE.Mesh(new THREE.TorusGeometry(.24,.038,6,12), smat);
+        ring.rotation.x=Math.PI/2; ring.position.y=(i-1)*.14; g.add(ring);
       }
-      const pl=new THREE.PointLight(0xff60b0,1.8,3); pl.position.set(0,.1,0); g.add(pl);
-      g.position.set((Math.random()-.5)*5, 7, (Math.random()-.5)*5);
-      g.userData.anim='fall'; g.userData.baseY=1.8; g.userData.landed=false;
+      const pl=new THREE.PointLight(0xff60b0,2.0,3); pl.position.set(0,0,0); g.add(pl);
+      g.position.set((Math.random()-.5)*5, 8, (Math.random()-.5)*5);
+      g.userData.anim='bounceDrop'; g.userData.baseY=0.5;
+      g.userData.vy=-0.5; g.userData.bounces=0; g.userData.settled=false;
       return g;
     },
-    ttl: 20,
+    ttl: 22,
     reward() { gs.hunger=Math.min(100,gs.hunger+25); showPopup(t('popCandy'),'#ff80c0'); },
   },
-  // ── 魔法花
+  // ── 魔法花（花瓣逐片展开，风中摇曳）
   {
     type: 'magicFlower',
     build() {
       const g = new THREE.Group();
-      const stemMat=new THREE.MeshLambertMaterial({color:0x40c040,emissive:0x20a020,emissiveIntensity:.4});
-      const stem=new THREE.Mesh(new THREE.CylinderGeometry(.04,.05,.4,6), stemMat);
-      stem.position.y=.2; g.add(stem);
-      const colors=[0xff60b0,0xff80d0,0xffa0e0,0xffb0f0,0xffc0ff];
+      const stemMat=new THREE.MeshLambertMaterial({color:0x40c040,emissive:0x20a020,emissiveIntensity:.5});
+      const stem=new THREE.Mesh(new THREE.CylinderGeometry(.04,.06,.5,6), stemMat);
+      stem.position.y=.25; g.add(stem);
+      // Leaves
+      const leafMat=new THREE.MeshLambertMaterial({color:0x30a830,emissive:0x186018,emissiveIntensity:.4,side:THREE.DoubleSide});
+      [-1,1].forEach(side=>{
+        const lf=new THREE.Mesh(new THREE.SphereGeometry(.12,6,4), leafMat);
+        lf.scale.set(1,.25,1.6); lf.position.set(side*.22,.28,0); lf.rotation.z=side*.5; g.add(lf);
+      });
+      const colors=[0xff40a0,0xff60c0,0xff80d8,0xffa0e8,0xffb0f0,0xffc8ff];
+      const petals=[];
       for(let i=0;i<6;i++){
         const a=i/6*Math.PI*2;
-        const pmat=new THREE.MeshLambertMaterial({color:colors[i%colors.length],emissive:0xff50c0,emissiveIntensity:.6});
-        const petal=new THREE.Mesh(new THREE.SphereGeometry(.13,7,5), pmat);
-        petal.scale.set(1,.45,1); petal.position.set(Math.cos(a)*.2,.45,Math.sin(a)*.2); g.add(petal);
+        const pmat=new THREE.MeshLambertMaterial({color:colors[i],emissive:0xff30a0,emissiveIntensity:.7});
+        const petal=new THREE.Mesh(new THREE.SphereGeometry(.15,7,5), pmat);
+        petal.scale.set(1,.38,1); petal.position.set(Math.cos(a)*.22,.52,Math.sin(a)*.22);
+        petal.scale.setScalar(0); // start closed
+        g.add(petal); petals.push(petal);
       }
-      const center=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),
-        new THREE.MeshLambertMaterial({color:0xffff80,emissive:0xffee00,emissiveIntensity:1.2}));
-      center.position.y=.45; g.add(center);
-      const pl=new THREE.PointLight(0xff80c0,1.4,2.5); pl.position.set(0,.5,0); g.add(pl);
+      const center=new THREE.Mesh(new THREE.SphereGeometry(.11,8,6),
+        new THREE.MeshLambertMaterial({color:0xffff80,emissive:0xffee00,emissiveIntensity:1.6}));
+      center.position.y=.52; center.scale.setScalar(0); g.add(center);
+      const pl=new THREE.PointLight(0xff80c0,1.6,3); pl.position.set(0,.5,0); g.add(pl);
       g.position.set((Math.random()-.5)*5,.1,(Math.random()-.5)*5);
-      g.scale.setScalar(0);
-      g.userData.anim='grow'; g.userData.baseY=.1;
+      g.userData.anim='bloom'; g.userData.baseY=.1;
+      g.userData.petals=petals; g.userData.center=center;
       return g;
     },
-    ttl: 22,
+    ttl: 25,
     reward() { gs.mood=Math.min(100,gs.mood+18); showPopup(t('popFlower'),'#ff80c0'); },
   },
-  // ── 灵笼
+  // ── 灵笼（钟摆摆动 + 火焰闪烁 + 缓慢漂移）
   {
     type: 'ghostLantern',
     build() {
       const g = new THREE.Group();
-      const mat=new THREE.MeshLambertMaterial({color:0xffd080,emissive:0xff8800,emissiveIntensity:1.0,transparent:true,opacity:.88});
-      // Lantern body: cylinder
-      const body=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.4,8), mat);
-      g.add(body);
-      // Top + bottom caps
-      const cap=new THREE.MeshLambertMaterial({color:0xcc6600,emissive:0xff4400,emissiveIntensity:.8});
-      [.22,-.22].forEach(y => {
-        const c=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.05,8), cap);
-        c.position.y=y; g.add(c);
+      // Pivot point (string hangs from here)
+      const pivot = new THREE.Group();
+      g.add(pivot);
+      const mat=new THREE.MeshLambertMaterial({color:0xffd080,emissive:0xff8800,emissiveIntensity:1.1,transparent:true,opacity:.90});
+      // Hanging string
+      const str=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.55,4),
+        new THREE.MeshLambertMaterial({color:0xcc8844}));
+      str.position.y=-.28; pivot.add(str);
+      // Lantern body group offset below pivot
+      const body=new THREE.Group(); body.position.y=-.6; pivot.add(body);
+      const bmat=mat.clone();
+      const cyl=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.42,8), bmat);
+      body.add(cyl);
+      const capMat=new THREE.MeshLambertMaterial({color:0xcc6600,emissive:0xff4400,emissiveIntensity:.9});
+      [.24,-.24].forEach(y=>{
+        const c=new THREE.Mesh(new THREE.CylinderGeometry(.23,.23,.055,8), capMat);
+        c.position.y=y; body.add(c);
       });
-      // Vertical ribs
       for(let i=0;i<6;i++){
         const a=i/6*Math.PI*2;
-        const rib=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.42,4),
+        const rib=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.44,4),
           new THREE.MeshLambertMaterial({color:0x884400}));
-        rib.position.set(Math.cos(a)*.18,0,Math.sin(a)*.18); g.add(rib);
+        rib.position.set(Math.cos(a)*.18,0,Math.sin(a)*.18); body.add(rib);
       }
-      // Glow
-      const pl=new THREE.PointLight(0xff8800,3.0,5); pl.position.set(0,0,0); g.add(pl);
-      // Hanging string
-      const str=new THREE.Mesh(new THREE.CylinderGeometry(.01,.01,.5,4),
-        new THREE.MeshLambertMaterial({color:0xcc8844}));
-      str.position.y=.45; g.add(str);
-      g.position.set((Math.random()-.5)*4, 4.0, (Math.random()-.5)*4);
-      g.userData.anim='hover'; g.userData.baseY=4.0;
+      const pl=new THREE.PointLight(0xff8800,3.2,6); pl.position.set(0,0,0); body.add(pl);
+      g.userData.pivot=pivot; g.userData.pl=pl;
+      g.position.set((Math.random()-.5)*4, 4.6, (Math.random()-.5)*4);
+      const da=Math.random()*Math.PI*2;
+      g.userData.anim='swing'; g.userData.baseY=4.6;
+      g.userData.swingT=Math.random()*10; // start at random phase
+      g.userData.driftVx=(Math.random()-.5)*.3; g.userData.driftVz=(Math.random()-.5)*.3;
       return g;
     },
-    ttl: 20,
+    ttl: 22,
     reward() { addFire(6); gs.energy=Math.min(100,gs.energy+15); showPopup(t('popLantern'),'#ffd080'); },
   },
 ];
@@ -2032,8 +2067,107 @@ function updateEvents(dt, totalElapsed) {
       e.mesh.rotation.y += dt*.5;
 
     } else if (anim === 'hover') {
-      e.mesh.position.y = baseY + Math.sin(totalElapsed*2.0 + e.mesh.userData.phase||0)*.18;
+      e.mesh.position.y = baseY + Math.sin(totalElapsed*2.0 + (e.mesh.userData.phase||0))*.18;
       e.mesh.rotation.y += dt*1.5;
+
+    } else if (anim === 'gyro') {
+      // 灵钻：多轴陀螺旋转 + 周期闪光
+      e.mesh.rotation.y += dt*3.2;
+      e.mesh.rotation.x += dt*1.8;
+      e.mesh.rotation.z += dt*1.1;
+      e.mesh.position.y = baseY + Math.sin(totalElapsed*1.5)*.12;
+      e.mesh.userData.flashT += dt;
+      if (e.mesh.userData.flashT > 2.5) {
+        e.mesh.userData.flashT = 0;
+        if (e.mesh.userData.pl) e.mesh.userData.pl.intensity = 9;
+        setTimeout(()=>{ try{ if(e.mesh.userData.pl) e.mesh.userData.pl.intensity=2.5; }catch(_){} }, 280);
+      }
+      if (!e.mesh.userData.pl) e.mesh.traverse(c=>{ if(c.isPointLight) e.mesh.userData.pl=c; });
+
+    } else if (anim === 'wander') {
+      // 幸运星：随机漂游 + 自旋
+      e.mesh.userData.dirT += dt;
+      if (e.mesh.userData.dirT > 3.5 + Math.random()*2) {
+        e.mesh.userData.dirT = 0;
+        const a = Math.random()*Math.PI*2;
+        const spd = 0.5+Math.random()*.6;
+        e.mesh.userData.vx = Math.cos(a)*spd;
+        e.mesh.userData.vz = Math.sin(a)*spd;
+      }
+      e.mesh.position.x += e.mesh.userData.vx * dt;
+      e.mesh.position.z += e.mesh.userData.vz * dt;
+      if (Math.abs(e.mesh.position.x) > 4.5) e.mesh.userData.vx *= -1;
+      if (Math.abs(e.mesh.position.z) > 4.5) e.mesh.userData.vz *= -1;
+      e.mesh.position.y = baseY + Math.sin(totalElapsed*1.3)*.22;
+      e.mesh.rotation.z += dt*2.5; // star spins on its face
+
+    } else if (anim === 'halo') {
+      // 能量环：竖直轮子旋转 + 扩缩脉冲
+      e.mesh.rotation.y += dt*3.5; // spin the tilted ring fast
+      const sc = 1 + Math.sin(totalElapsed*6)*.16;
+      e.mesh.scale.set(sc, sc, sc);
+      e.mesh.position.y = baseY + Math.sin(totalElapsed*1.6)*.18;
+
+    } else if (anim === 'bounceDrop') {
+      // 糖果：物理弹跳落地
+      if (!e.mesh.userData.settled) {
+        e.mesh.userData.vy += -14 * dt; // gravity
+        e.mesh.position.y += e.mesh.userData.vy * dt;
+        e.mesh.rotation.z += dt*4;
+        if (e.mesh.position.y <= baseY) {
+          e.mesh.position.y = baseY;
+          e.mesh.userData.bounces++;
+          const rest = [0.58, 0.38, 0.18][Math.min(e.mesh.userData.bounces-1,2)] || 0;
+          e.mesh.userData.vy = Math.abs(e.mesh.userData.vy) * rest;
+          if (e.mesh.userData.bounces >= 3 || Math.abs(e.mesh.userData.vy) < 0.5)
+            e.mesh.userData.settled = true;
+        }
+      } else {
+        e.mesh.position.y = baseY + Math.sin(totalElapsed*2.5)*.04;
+        e.mesh.rotation.y += dt*.8;
+        e.mesh.scale.set(1.06, 0.94, 1.06); // squashed on ground
+      }
+
+    } else if (anim === 'bloom') {
+      // 魔法花：花瓣逐片展开 + 摇曳
+      const age = e.maxTtl - e.ttl;
+      if (age < 0.6) {
+        e.mesh.scale.setScalar(age/0.6);
+      } else {
+        e.mesh.scale.setScalar(1);
+        if (e.mesh.userData.petals) {
+          const pa = age - 0.6;
+          e.mesh.userData.petals.forEach((p, i) => {
+            const s = Math.min(1, Math.max(0, (pa - i*0.18)*3));
+            p.scale.set(s, s*0.38, s);
+          });
+          if (e.mesh.userData.center) {
+            const cs = Math.min(1, Math.max(0, (pa-0.5)*4));
+            e.mesh.userData.center.scale.setScalar(cs);
+          }
+        }
+        // Gentle sway
+        e.mesh.rotation.z = Math.sin(totalElapsed*1.8)*.09;
+        e.mesh.rotation.x = Math.sin(totalElapsed*1.3)*.06;
+      }
+
+    } else if (anim === 'swing') {
+      // 灵笼：钟摆 + 闪烁 + 漂移
+      e.mesh.userData.swingT += dt;
+      const sw = e.mesh.userData.swingT;
+      const amp = 0.38 * Math.max(0.2, Math.exp(-sw*0.06)); // slowly damps
+      if (e.mesh.userData.pivot) e.mesh.userData.pivot.rotation.z = Math.sin(sw*2.0)*amp;
+      // Drift
+      e.mesh.position.x += e.mesh.userData.driftVx * dt;
+      e.mesh.position.z += e.mesh.userData.driftVz * dt;
+      if (Math.abs(e.mesh.position.x) > 4.5) e.mesh.userData.driftVx *= -1;
+      if (Math.abs(e.mesh.position.z) > 4.5) e.mesh.userData.driftVz *= -1;
+      // Flicker
+      if (e.mesh.userData.pl) {
+        e.mesh.userData.pl.intensity = 3.0 + Math.sin(totalElapsed*11.3)*0.9 + Math.sin(totalElapsed*7.1)*0.5;
+      } else {
+        e.mesh.traverse(c=>{ if(c.isPointLight) e.mesh.userData.pl=c; });
+      }
 
     } else if (anim === 'pulse') {
       const sc = 1 + Math.sin(totalElapsed*4)*0.12;
