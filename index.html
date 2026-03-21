@@ -195,6 +195,69 @@
       100%   { opacity:0; }
     }
 
+    /* ══ ? 按钮 & 玩法说明 ══ */
+    #help-btn {
+      position: fixed; bottom: 96px; left: 16px;
+      width: 32px; height: 32px;
+      background: rgba(8,4,28,0.72);
+      border: 1px solid rgba(140,100,255,0.22);
+      border-radius: 50%;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      color: rgba(200,170,255,0.65);
+      font-size: 16px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 11;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: background .15s, color .15s, transform .08s;
+    }
+    #help-btn:active { background: rgba(140,90,255,0.22); transform: scale(0.9); }
+
+    #help-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(4,2,16,0.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s;
+    }
+    #help-overlay.show { opacity: 1; pointer-events: all; }
+    #help-panel {
+      width: min(88%, 340px);
+      background: rgba(8,4,28,0.92);
+      border: 1px solid rgba(140,100,255,0.28);
+      border-radius: 16px;
+      padding: 22px 20px 18px;
+      transform: translateY(16px);
+      transition: transform .25s;
+    }
+    #help-overlay.show #help-panel { transform: translateY(0); }
+    #help-panel h2 {
+      font-size: 13px; letter-spacing: 3px;
+      color: #ecdeff; margin-bottom: 14px;
+      text-shadow: 0 0 12px rgba(180,120,255,0.6);
+    }
+    #help-panel .help-body {
+      font-size: 13px; line-height: 1.75;
+      color: rgba(210,190,255,0.78);
+    }
+    #help-panel .help-body b { color: #d8b8ff; }
+    #help-close {
+      margin-top: 18px; width: 100%; height: 40px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(160,120,255,0.25);
+      border-radius: 20px;
+      color: rgba(200,170,255,0.7);
+      font-family: inherit; font-size: 13px; letter-spacing: 1px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: background .15s;
+    }
+    #help-close:active { background: rgba(140,90,255,0.2); }
+
     /* ══ Splash Screen ══ */
     #splash {
       position: fixed; inset: 0; z-index: 999;
@@ -276,6 +339,16 @@
   <div class="srow"><span class="slabel" id="lbl-energy"></span><div class="strack"><div class="sbar" id="b-energy" style="width:90%"></div></div></div>
 </div>
 
+<button id="help-btn">?</button>
+
+<div id="help-overlay">
+  <div id="help-panel">
+    <h2 id="help-title"></h2>
+    <div class="help-body" id="help-body"></div>
+    <button id="help-close"></button>
+  </div>
+</div>
+
 <div id="popup"></div>
 <div id="wish-bubble"></div>
 <div id="hint"></div>
@@ -324,6 +397,21 @@ window._ggStartTs = Date.now();
       evtMeteor:'流星！快点击！',
       wishPet:'想被摸摸~', wishFeed:'有点饿了...', wishPlay:'我们玩耍吧！', wishRest:'有点累了...',
       evolve:'进化！{n}降临新领地',
+      helpTitle:'玩法说明',
+      helpClose:'关闭',
+      helpBody:`
+        <b>👻 养育你的幽灵</b><br>
+        保持心情、饱食、精力三项属性不为零，幽灵才会健康成长。<br><br>
+        <b>🕯️ 灵火</b><br>
+        点击场景中<b>熄灭的蜡烛</b>可获得灵火，投食需消耗灵火。<br><br>
+        <b>🌙 夜晚与白天</b><br>
+        幽灵活跃在夜晚。每天结束时会经历短暂白昼过场，之后进入新的一天。<br><br>
+        <b>✨ 随机事件</b><br>
+        迷路幽灵、灵菇、流星会随机出现——<b>快去点击</b>！<br><br>
+        <b>💜 进化</b><br>
+        随着天数增长，幽灵会进化为更强大的形态。<br><br>
+        <b>🔄 视角</b><br>
+        拖动画面可旋转3D视角。`,
     },
     en: {
       title:'Ghost Garden', ghostName:'Boo',
@@ -346,6 +434,21 @@ window._ggStartTs = Date.now();
       evtMeteor:'Meteor! Tap fast!',
       wishPet:'Want pets~', wishFeed:'A bit hungry...', wishPlay:"Let's play!", wishRest:'Feeling tired...',
       evolve:'Evolution! {n} has arrived',
+      helpTitle:'How to Play',
+      helpClose:'Close',
+      helpBody:`
+        <b>👻 Care for your ghost</b><br>
+        Keep Mood, Food and Energy above zero to help your ghost thrive.<br><br>
+        <b>🕯️ Flame</b><br>
+        Tap <b>unlit candles</b> in the scene to earn flame. Feeding costs flame.<br><br>
+        <b>🌙 Night & Day</b><br>
+        Ghosts are active at night. Each day ends with a brief dawn cinematic before the next night begins.<br><br>
+        <b>✨ Random Events</b><br>
+        Lost ghosts, magic mushrooms, and meteors appear randomly — <b>tap them fast!</b><br><br>
+        <b>💜 Evolution</b><br>
+        As days pass your ghost evolves into a more powerful form.<br><br>
+        <b>🔄 Camera</b><br>
+        Drag the scene to rotate the 3D view.`,
     }
   };
   const loc = (()=>{
@@ -1699,7 +1802,23 @@ document.getElementById('btn-feed').textContent    = t('feed');
 document.getElementById('btn-play').textContent    = t('play');
 document.getElementById('btn-rest').textContent    = t('rest');
 document.getElementById('hint').textContent        = t('hint');
+document.getElementById('help-title').textContent  = t('helpTitle');
+document.getElementById('help-body').innerHTML     = t('helpBody');
+document.getElementById('help-close').textContent  = t('helpClose');
 updateSubDisplay();
+
+// ── 玩法说明开关
+const helpOverlay = document.getElementById('help-overlay');
+document.getElementById('help-btn').addEventListener('pointerdown', e => {
+  e.stopPropagation();
+  helpOverlay.classList.add('show');
+});
+document.getElementById('help-close').addEventListener('pointerdown', () => {
+  helpOverlay.classList.remove('show');
+});
+helpOverlay.addEventListener('pointerdown', e => {
+  if (e.target === helpOverlay) helpOverlay.classList.remove('show');
+});
 
 // ── Splash 进度条动画 + 延迟消失
 {
