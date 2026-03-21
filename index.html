@@ -896,6 +896,7 @@ const snd = (() => {
                         [800,1600,0.12,'square',0.12],[1000,2000,0.2,'sine',0.15]], 0.1),
     dayEnd:  () => play(220, 110, 0.6, 'sine', 0.08),
     warn:    () => seq([[320, 200, 0.18, 'sine', 0.16], [260, 160, 0.22, 'sine', 0.13]], 0.16),
+    fail:    () => seq([[280, 180, 0.12, 'sine', 0.18], [200, 140, 0.16, 'sine', 0.14]], 0.14),
     reroll:  () => seq([[440, 660, 0.07, 'sine', 0.10], [660, 880, 0.07, 'sine', 0.10], [880, 1320, 0.10, 'sine', 0.12]], 0.07),
   };
 })();
@@ -2089,7 +2090,7 @@ const EVENT_DEFS = [
     },
     ttl: 8,
     req: {stat:'energy', min:25},
-    reward() { addFire(2); showPopup(t('popMeteor'),'#ffdd44'); },
+    reward() { addFire(4); showPopup(t('popMeteor'),'#ffdd44'); },
   },
   // ── 灵光球
   {
@@ -2388,17 +2389,19 @@ function spawnEvent() {
 }
 
 function collectEvent(evt) {
-  if (gs.resting) { showPopup(t('popRestBusy'), '#80c8ff', 1.5); return; }
+  if (gs.resting) { snd.fail(); showPopup(t('popRestBusy'), '#80c8ff', 1.5); return false; }
   if (evt.def.req) {
     const {stat, min} = evt.def.req;
     if (gs[stat] < min) {
       const label = {mood: t('statMood'), energy: t('statEnergy'), hunger: t('statHunger')}[stat];
-      showPopup(`${label} < ${min}`, '#ff8080', 2.5);
-      return;
+      snd.fail(); showPopup(`${label} < ${min}`, '#ff8080', 2.5);
+      return false;
     }
   }
+  snd.collect();
   evt.def.reward(); scene.remove(evt.mesh);
   const idx = eventObjects.indexOf(evt); if (idx>-1) eventObjects.splice(idx,1);
+  return true;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2947,7 +2950,7 @@ const gs = {
   day: 1, dayTimer: 0, inDayScene: false,
   cd: { pet:0, feed:0, play:0, rest:0 },
   bounceT: 1.5, playing: false, resting: false, expression: 'happy',
-  dangerTimer: 0, dead: false,
+  dangerTimer: 0, dead: false, endingShown: false,
   warnedLow: { mood: false, hunger: false, energy: false },
   lvScale: 0.82,
 };
@@ -3049,7 +3052,8 @@ function updateStats(dt) {
     gs.dayTimer = 0; gs.day++;
     updateSubDisplay();
     snd.dayEnd();
-    if (gs.day > 13) {
+    if (gs.day > 13 && !gs.endingShown) {
+      gs.endingShown = true;
       triggerEnding();
     } else {
       triggerDawnTransition(); // 白天过场（内含场景重建）
@@ -3177,7 +3181,7 @@ function restartGame() {
   gs.day=1; gs.dayTimer=0; gs.inDayScene=false;
   gs.cd.pet=0; gs.cd.feed=0; gs.cd.play=0; gs.cd.rest=0;
   gs.bounceT=1.5; gs.playing=false; gs.resting=false; gs.expression='happy';
-  gs.dangerTimer=0; gs.dead=false;
+  gs.dangerTimer=0; gs.dead=false; gs.endingShown=false;
   gs.warnedLow = { mood: false, hunger: false, energy: false };
   gs.lvScale=0.82;
   // UI
@@ -3417,7 +3421,7 @@ function doAction(type) {
       gs.mood = Math.min(100, gs.mood+14);
       gs.totalHappy += 12;
       for (let i=0;i<5;i++) setTimeout(spawnHeart, i*100);
-      showPopup(t('popPet'), '#ff80e0');
+      showPopup(`♥+14  🔥-${fireCost}`, '#ff80e0');
       snd.pet();
       gs.bounceT=0; gs.cd.pet=2.5;
       break;
@@ -3427,7 +3431,7 @@ function doAction(type) {
       gs.hunger = Math.min(100, gs.hunger+28);
       gs.mood   = Math.min(100, gs.mood+5);
       gs.totalHappy += 5;
-      showPopup(t('popFeed'), '#ffcc60');
+      showPopup(`🍖+28  🔥-${fireCost}`, '#ffcc60');
       snd.feed();
       gs.bounceT=0; gs.cd.feed=3;
       break;
@@ -3439,7 +3443,7 @@ function doAction(type) {
       gs.totalHappy += 20;
       gs.playing=true;
       for (let i=0;i<6;i++) setTimeout(spawnStar, i*200);
-      showPopup(t('popPlay'), '#c080ff');
+      showPopup(fireCost > 0 ? `♥+22  ⚡-22  🔥-${fireCost}` : t('popPlay'), '#c080ff');
       snd.play();
       gs.bounceT=0; gs.cd.play=5;
       setTimeout(()=>{ gs.playing=false; },3500);
@@ -3493,7 +3497,7 @@ canvas.addEventListener('pointerdown', e => {
 
   // 随机事件对象
   for (const evt of eventObjects) {
-    if (raycaster.intersectObject(evt.mesh,true).length>0) { snd.collect(); collectEvent(evt); return; }
+    if (raycaster.intersectObject(evt.mesh,true).length>0) { collectEvent(evt); return; }
   }
 });
 
