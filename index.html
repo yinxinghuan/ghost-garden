@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title id="page-title">幽灵庄园</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -13,6 +13,9 @@
       font-family: 'EB Garamond', 'Noto Serif SC', serif;
       color: #e0d0ff; user-select: none;
       border-radius: 24px;
+    }
+    body.en {
+      font-family: 'Playfair Display', serif;
     }
     canvas { display: block; position: fixed; inset: 0; }
 
@@ -352,7 +355,7 @@
       position: fixed; inset: 0; z-index: 998;
       background: #000; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      font-family: 'EB Garamond', 'Noto Serif SC', serif;
+      font-family: inherit;
       opacity: 1;
       transition: background 2.2s ease, opacity 1.2s ease;
       pointer-events: all;
@@ -392,7 +395,7 @@
     #intro-skip {
       position: absolute; bottom: 28px; right: 24px;
       background: transparent; border: 1px solid rgba(180,150,255,0.25);
-      color: rgba(180,150,255,0.45); font-family: 'EB Garamond', 'Noto Serif SC', serif;
+      color: rgba(180,150,255,0.45); font-family: inherit;
       font-size: 13px; padding: 5px 16px; border-radius: 20px;
       cursor: pointer; touch-action: none;
       -webkit-tap-highlight-color: transparent;
@@ -2743,7 +2746,7 @@ function applyScenePhase(phase) {
 }
 
 const announceEl = document.getElementById('day-announce');
-if (window._loc === 'en') announceEl.classList.add('en');
+if (window._loc === 'en') document.body.classList.add('en');
 
 // 过场：幽灵消失，Three.js 场景经历日出→正午→日落→入夜，太阳弧线划过（共6秒）
 function triggerDawnTransition() {
