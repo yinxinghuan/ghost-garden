@@ -159,11 +159,12 @@
       text-shadow: 0 0 14px currentColor;
       white-space: nowrap; z-index: 20;
     }
-    #popup.show { animation: gg-pfloat 1.4s ease-out forwards; }
+    #popup.show { animation: gg-pfloat var(--popup-dur,1.4s) ease-out forwards; }
     @keyframes gg-pfloat {
       0%   { opacity:1; transform:translate(-50%,0) scale(1); }
-      20%  { opacity:1; transform:translate(-50%,-24px) scale(1.08); }
-      100% { opacity:0; transform:translate(-50%,-60px) scale(0.9); }
+      15%  { opacity:1; transform:translate(-50%,-18px) scale(1.08); }
+      70%  { opacity:1; transform:translate(-50%,-22px) scale(1.05); }
+      100% { opacity:0; transform:translate(-50%,-55px) scale(0.92); }
     }
 
     /* ══ 提示文字 ══ */
@@ -1696,8 +1697,8 @@ const EVENT_DEFS = [
       });
       const pl = new THREE.PointLight(0xa080ff,.8,2.5); pl.position.y=.2; g.add(pl);
       const px = (Math.random()>.5?1:-1)*(2+Math.random()*1.5), pz=(Math.random()-.5)*4;
-      g.position.set(px, 2.8, pz);
-      g.userData.anim='hover'; g.userData.baseY=2.8;
+      g.position.set(px, 1.0, pz);
+      g.userData.anim='hover'; g.userData.baseY=1.0;
       return g;
     },
     ttl: 20,
@@ -1761,8 +1762,8 @@ const EVENT_DEFS = [
       const pl=new THREE.PointLight(0x40aaff,2.2,4); pl.position.set(0,.1,0); g.add(pl);
       const angle=Math.random()*Math.PI*2, radius=1.8+Math.random();
       g.userData.angle=angle; g.userData.radius=radius; g.userData.speed=.5+Math.random()*.3;
-      g.userData.anim='orbit'; g.userData.baseY=2.6;
-      g.position.set(Math.cos(angle)*radius, 2.6, Math.sin(angle)*radius);
+      g.userData.anim='orbit'; g.userData.baseY=0.9;
+      g.position.set(Math.cos(angle)*radius, 0.9, Math.sin(angle)*radius);
       return g;
     },
     ttl: 22,
@@ -1783,7 +1784,7 @@ const EVENT_DEFS = [
       s3.position.set(-.18,.12,.1); s3.rotation.z=-.5; s3.rotation.y=.4; g.add(s3);
       const pl=new THREE.PointLight(0xc080ff,2.2,3.5); pl.position.set(0,.3,0); g.add(pl);
       g.position.set((Math.random()-.5)*5, 7, (Math.random()-.5)*5);
-      g.userData.anim='fall'; g.userData.baseY=2.0; g.userData.landed=false;
+      g.userData.anim='fall'; g.userData.baseY=0.3; g.userData.landed=false;
       return g;
     },
     ttl: 18,
@@ -1814,8 +1815,8 @@ const EVENT_DEFS = [
       g.userData.pa=Math.random()*Math.PI*2;
       g.userData.pr=1.2+Math.random()*1.2;
       g.userData.ps=.6+Math.random()*.4;
-      g.userData.anim='butterfly'; g.userData.baseY=2.8;
-      g.position.set(sx, 2.8, sz);
+      g.userData.anim='butterfly'; g.userData.baseY=0.9;
+      g.position.set(sx, 0.9, sz);
       return g;
     },
     ttl: 20,
@@ -1840,8 +1841,8 @@ const EVENT_DEFS = [
         g.add(gem);
       }
       const pl=new THREE.PointLight(0xffcc00,2.5,4); pl.position.set(0,0,0); g.add(pl);
-      g.position.set((Math.random()-.5)*4, 3.2, (Math.random()-.5)*4);
-      g.userData.anim='gyro'; g.userData.baseY=3.2; g.userData.flashT=0;
+      g.position.set((Math.random()-.5)*4, 0.9, (Math.random()-.5)*4);
+      g.userData.anim='gyro'; g.userData.baseY=0.9; g.userData.flashT=0;
       return g;
     },
     ttl: 18,
@@ -1866,7 +1867,7 @@ const EVENT_DEFS = [
       const pl=new THREE.PointLight(0xffee44,2.2,5); pl.position.set(0,0,0); g.add(pl);
       const ang = Math.random()*Math.PI*2;
       const spd = 0.6+Math.random()*.5;
-      g.position.set((Math.random()-.5)*5, 3.2+Math.random()*.8, (Math.random()-.5)*5);
+      g.position.set((Math.random()-.5)*5, 1.2+Math.random()*.4, (Math.random()-.5)*5);
       g.userData.anim='wander'; g.userData.baseY=g.position.y;
       g.userData.vx=Math.cos(ang)*spd; g.userData.vz=Math.sin(ang)*spd;
       g.userData.dirT=0;
@@ -1899,10 +1900,10 @@ const EVENT_DEFS = [
         new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x80ffee,emissiveIntensity:3.0}));
       g.add(core);
       const pl=new THREE.PointLight(0x00ffcc,2.5,5); pl.position.set(0,0,0); g.add(pl);
-      g.position.set((Math.random()-.5)*3, 2.8, (Math.random()-.5)*3);
+      g.position.set((Math.random()-.5)*3, 0.9, (Math.random()-.5)*3);
       // Tilt the ring to vertical (spin around world Y looks like a wheel)
       g.rotation.x = Math.PI/2;
-      g.userData.anim='halo'; g.userData.baseY=2.8;
+      g.userData.anim='halo'; g.userData.baseY=0.9;
       return g;
     },
     ttl: 18,
@@ -1997,9 +1998,9 @@ const EVENT_DEFS = [
       }
       const pl=new THREE.PointLight(0xff8800,3.2,6); pl.position.set(0,0,0); body.add(pl);
       g.userData.pivot=pivot; g.userData.pl=pl;
-      g.position.set((Math.random()-.5)*4, 4.6, (Math.random()-.5)*4);
+      g.position.set((Math.random()-.5)*4, 2.2, (Math.random()-.5)*4);
       const da=Math.random()*Math.PI*2;
-      g.userData.anim='swing'; g.userData.baseY=4.6;
+      g.userData.anim='swing'; g.userData.baseY=2.2;
       g.userData.swingT=Math.random()*10; // start at random phase
       g.userData.driftVx=(Math.random()-.5)*.3; g.userData.driftVz=(Math.random()-.5)*.3;
       return g;
@@ -2022,7 +2023,7 @@ function spawnEvent() {
     ghostGem:'evtGem', luckyStar:'evtStar', energyRing:'evtEnergy',
     candyDrop:'evtCandy', magicFlower:'evtFlower', ghostLantern:'evtLantern',
   };
-  showPopup(t(labelKeys[def.type] || 'evtLostGhost'), '#b8d8ff');
+  showPopup(t(labelKeys[def.type] || 'evtLostGhost'), '#b8d8ff', 3.5);
 }
 
 function collectEvent(evt) {
@@ -2485,7 +2486,8 @@ function checkLevel() {
 
 // ── POPUP
 const popupEl = document.getElementById('popup');
-function showPopup(text, color='#fff') {
+function showPopup(text, color='#fff', dur=1.4) {
+  popupEl.style.setProperty('--popup-dur', dur+'s');
   popupEl.textContent=text; popupEl.style.color=color;
   popupEl.classList.remove('show'); void popupEl.offsetWidth; popupEl.classList.add('show');
 }
