@@ -222,6 +222,7 @@
       border-radius: 50%; color: #fff; font-size: 15px;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; user-select: none;
+      pointer-events: auto;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       transition: background .15s, transform .08s, opacity .2s;
@@ -283,6 +284,7 @@
     /* ══ 死亡画面 ══ */
     #dead-overlay {
       position: fixed; inset: 0; z-index: 200;
+      pointer-events: none;
       background: rgba(4,2,16,0.82);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
