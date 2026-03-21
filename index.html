@@ -1700,7 +1700,10 @@ function buildGhost(level = 1) {
     let bump;
     if (dna.tailShape === 'box') {
       const s = dna.tailSize * 1.5;
-      bump = new THREE.Mesh(new THREE.BoxGeometry(s, s * 0.75, s * 0.75), bodyMat);
+      const slim = Math.random() < 0.5; // 50% 细长条，50% 方块
+      const w = slim ? s * 0.45 : s;
+      const h = slim ? s * 2.2  : s * 0.80;
+      bump = new THREE.Mesh(new THREE.BoxGeometry(w, h, s * 0.70), bodyMat);
     } else if (dna.tailShape === 'cone') {
       bump = new THREE.Mesh(new THREE.ConeGeometry(dna.tailSize, dna.tailSize * 2.2, 5), bodyMat);
       bump.rotation.z = Math.PI; // 尖朝下
