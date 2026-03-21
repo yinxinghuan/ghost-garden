@@ -2882,12 +2882,52 @@ function showIntroOnce() {
   el.style.background = '#000';
 
   let pageIdx = 0;
-  let busy = false; // 翻页防抖
+  let busy = false;
+  let _birthSaved = null;
   pages[0].classList.add('active');
 
+  function enterBirthScene() {
+    // 隐藏所有场景物件，只留幽灵
+    const hidden = [];
+    scene.children.forEach(obj => {
+      if (obj === ghostGroup || obj.isLight) return;
+      if (obj.visible) { obj.visible = false; hidden.push(obj); }
+    });
+    const savedBg  = scene.background.clone();
+    const savedFN  = scene.fog.near, savedFF = scene.fog.far;
+    const savedPos = camera.position.clone();
+    const savedTgt = controls.target.clone();
+
+    scene.background = new THREE.Color(0x000000);
+    scene.fog.near = 999; scene.fog.far = 1000;
+    // 摄像头拉近，正对幽灵
+    camera.position.set(0, 2.6, 2.8);
+    controls.target.set(0, 2.2, 0);
+    controls.update();
+    controls.enabled = false;
+
+    // intro 背景改透明，Three.js 画布透出（只有幽灵+黑色）
+    el.style.transition = 'background 1.2s ease';
+    el.style.background = 'rgba(0,0,0,0)';
+
+    _birthSaved = { hidden, savedBg, savedFN, savedFF, savedPos, savedTgt };
+  }
+
+  function leaveBirthScene() {
+    if (!_birthSaved) return;
+    const s = _birthSaved; _birthSaved = null;
+    el.style.background = '#000';
+    s.hidden.forEach(obj => { obj.visible = true; });
+    scene.background = s.savedBg;
+    scene.fog.near = s.savedFN; scene.fog.far = s.savedFF;
+    camera.position.copy(s.savedPos);
+    controls.target.copy(s.savedTgt);
+    controls.update();
+    controls.enabled = true;
+  }
+
   function goToPage(idx) {
-    // 离开出生页时恢复黑色背景
-    if (pageIdx === 2) el.style.background = '#000';
+    if (pageIdx === 2) leaveBirthScene();
 
     pages[pageIdx].classList.remove('active');
     dots[pageIdx] && dots[pageIdx].classList.remove('on');
@@ -2898,24 +2938,18 @@ function showIntroOnce() {
     pages[pageIdx].classList.add('active');
     dots[pageIdx] && dots[pageIdx].classList.add('on');
 
-    // 进入出生页：背景变透明，幽灵真实形象透出
-    if (pageIdx === 2) {
-      el.style.background = 'rgba(0,0,0,0.08)';
-      tapHint.style.color = 'rgba(255,255,255,0.5)';
-    } else {
-      tapHint.style.color = '';
-    }
+    if (pageIdx === 2) enterBirthScene();
   }
 
   function advance() {
     if (busy) return;
     busy = true;
-    setTimeout(() => { busy = false; }, 600);
+    setTimeout(() => { busy = false; }, 700);
     goToPage(pageIdx + 1);
   }
 
   function dismiss() {
-    el.style.background = '#000';
+    if (pageIdx === 2) leaveBirthScene();
     gameEls.forEach(e => { if(e) e.style.visibility=''; });
     el.classList.add('done');
     setTimeout(() => { el.style.display='none'; el.classList.remove('done'); }, 1200);
