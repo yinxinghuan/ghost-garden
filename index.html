@@ -448,6 +448,16 @@
     }
     #ending-continue:active { background: rgba(140,80,255,0.35); transform: scale(0.96); }
 
+    #intro-reroll {
+      position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(180,150,255,0.3);
+      color: rgba(200,170,255,0.75); font-family: inherit;
+      font-size: 13px; letter-spacing: 2px; padding: 7px 22px; border-radius: 20px;
+      cursor: pointer; touch-action: none; white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .15s, transform .08s;
+    }
+    #intro-reroll:active { background: rgba(160,120,255,0.2); transform: translateX(-50%) scale(0.94); }
     #intro-skip {
       position: absolute; bottom: 28px; right: 24px;
       background: transparent; border: 1px solid rgba(180,150,255,0.25);
@@ -563,6 +573,7 @@
   <div class="intro-page" id="intro-p1"></div>
   <div class="intro-page" id="intro-p2">
     <p class="intro-ghost-lbl" id="intro-ghost-lbl"></p>
+    <button id="intro-reroll"></button>
   </div>
   <div class="intro-page" id="intro-p3"></div>
   <div id="intro-progress">
@@ -696,7 +707,7 @@ window._ggStartTs = Date.now();
         ['守护这座墓园，', '在十三天内长成完全体，', '便能与命运抗争到底。'],
       ],
       introBirth: '小幽 诞生了。',
-      introTap: '轻触翻页', introSkip: '跳过',
+      introTap: '轻触翻页', introSkip: '跳过', introReroll: '换一个',
       evolve:'进化！{n}降临，守护之力增强',
       dangerWarn:'危险！{stat}即将耗尽',
       deadTitle:'小幽消散了……墓园沦陷。',
@@ -780,7 +791,7 @@ window._ggStartTs = Date.now();
         ['Protect this cemetery.', 'Grow to your full power', 'within thirteen days.'],
       ],
       introBirth: '"Boo" is born.',
-      introTap: 'tap to continue', introSkip: 'Skip',
+      introTap: 'tap to continue', introSkip: 'Skip', introReroll: 'Reroll',
       evolve:'Evolution! {n} arrived — protection grows',
       dangerWarn:'{stat} is running out!',
       deadTitle:'Boo faded… the cemetery is lost.',
@@ -3145,6 +3156,13 @@ function showIntroOnce() {
   lblEl.textContent = t('introBirth');
   skipBtn.textContent = t('introSkip');
   tapHint.textContent = t('introTap');
+  const rerollBtn = document.getElementById('intro-reroll');
+  rerollBtn.textContent = t('introReroll');
+  rerollBtn.style.display = 'none';
+  rerollBtn.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    genGhostDNA(); buildGhost(1);
+  });
 
   // 隐藏游戏 UI，避免透明时显示干扰
   const gameEls = ['hud','stats','actions','hint'].map(id => document.getElementById(id));
@@ -3215,7 +3233,8 @@ function showIntroOnce() {
     pages[pageIdx].classList.add('active');
     dots[pageIdx] && dots[pageIdx].classList.add('on');
 
-    if (pageIdx === 2) enterBirthScene();
+    if (pageIdx === 2) { enterBirthScene(); rerollBtn.style.display = 'block'; }
+    else { rerollBtn.style.display = 'none'; }
   }
 
   function advance() {
