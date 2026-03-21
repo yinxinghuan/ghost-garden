@@ -710,6 +710,8 @@ window._ggStartTs = Date.now();
       introBirth: '小幽 诞生了。',
       introTap: '轻触翻页', introSkip: '跳过', introReroll: '换一个',
       evolve:'进化！{n}降临，守护之力增强',
+      degrade:'灵火耗尽！幽灵退化为{n}……',
+      popRestBusy:'休息中，无法捡拾',
       dangerWarn:'危险！{stat}即将耗尽',
       deadTitle:'小幽消散了……墓园沦陷。',
       deadStat:'守护了 {n} 天',
@@ -794,6 +796,8 @@ window._ggStartTs = Date.now();
       introBirth: '"Boo" is born.',
       introTap: 'tap to continue', introSkip: 'Skip', introReroll: 'Reroll',
       evolve:'Evolution! {n} arrived — protection grows',
+      degrade:'Flame too low! Reverted to {n}…',
+      popRestBusy:'Resting, cannot collect',
       dangerWarn:'{stat} is running out!',
       deadTitle:'Boo faded… the cemetery is lost.',
       deadStat:'Protected for {n} days',
@@ -2383,6 +2387,7 @@ function spawnEvent() {
 }
 
 function collectEvent(evt) {
+  if (gs.resting) { showPopup(t('popRestBusy'), '#80c8ff', 1.5); return; }
   if (evt.def.req) {
     const {stat, min} = evt.def.req;
     if (gs[stat] < min) {
@@ -3017,7 +3022,9 @@ function addFire(n) {
 }
 function spendFire(n) {
   if (gs.fire < n) return false;
-  gs.fire -= n; fireEl.textContent = gs.fire; return true;
+  gs.fire -= n; fireEl.textContent = gs.fire;
+  checkLevel(); // 消耗后检查是否触发降级
+  return true;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3181,6 +3188,7 @@ function restartGame() {
   ['mood','hunger','energy'].forEach(k => document.getElementById('b-'+k).classList.remove('danger'));
   applyScenePhase('night');
   updateSubDisplay();
+  updateBtnCosts();
   // 清除随机事件、敌人、施工
   eventObjects.forEach(e=>scene.remove(e.mesh)); eventObjects.length=0;
   enemyObjects.forEach(e=>scene.remove(e.mesh)); enemyObjects.length=0;
@@ -3351,16 +3359,29 @@ function showIntroOnce() {
   skipBtn.addEventListener('pointerdown', e => { e.stopPropagation(); dismiss(); });
 }
 
+// 维持各等级所需当前灵火下限：Lv2 需 ≥5，Lv3 需 ≥12
+const FIRE_FLOOR = [0, 5, 12];
+
 function checkLevel() {
-  // 按累计灵火升级：25→成灵，60→大灵
-  const newLv = gs.totalFire >= 60 ? 3 : gs.totalFire >= 25 ? 2 : 1;
+  // 升级：按累计灵火
+  let newLv = gs.totalFire >= 60 ? 3 : gs.totalFire >= 25 ? 2 : 1;
+  // 降级：当前灵火不足则压低等级上限
+  if (gs.fire < FIRE_FLOOR[2]) newLv = Math.min(newLv, 2);
+  if (gs.fire < FIRE_FLOOR[1]) newLv = Math.min(newLv, 1);
+
   if (newLv > gs.level) {
     gs.level = newLv;
     buildGhost(gs.level);
     snd.levelUp();
     showPopup(t('evolve', {n: t('stage'+gs.level)}), '#ffd060', 3.5);
+  } else if (newLv < gs.level) {
+    gs.level = newLv;
+    buildGhost(gs.level);
+    snd.warn();
+    showPopup(t('degrade', {n: t('stage'+gs.level)}), '#ff8060', 2.5);
   }
   updateSubDisplay();
+  if (typeof updateBtnCosts === 'function') updateBtnCosts();
 }
 
 // ── POPUP
@@ -3376,11 +3397,21 @@ flashEl.style.transition = 'opacity 0.35s';
 // ═══════════════════════════════════════════════════════════
 //  ACTIONS
 // ═══════════════════════════════════════════════════════════
+// 各操作灵火消耗（按等级 1/2/3）
+const ACTION_FIRE = {
+  pet:  [1, 2, 3],
+  feed: [2, 3, 5],
+  play: [0, 1, 2],
+  rest: [0, 0, 0],
+};
+
 function doAction(type) {
   if (gs.cd[type] > 0) return;
+  const fireCost = ACTION_FIRE[type][gs.level - 1];
   checkWish(type);
   switch(type) {
     case 'pet':
+      if (!spendFire(fireCost)) { showPopup(t('popNoFire'),'#ff8040'); return; }
       gs.mood = Math.min(100, gs.mood+14);
       gs.totalHappy += 12;
       for (let i=0;i<5;i++) setTimeout(spawnHeart, i*100);
@@ -3390,7 +3421,7 @@ function doAction(type) {
       break;
     case 'feed':
       if (gs.hunger>=96) { showPopup(t('popFull'),'#ffa'); return; }
-      if (!spendFire(2)) { showPopup(t('popNoFire'),'#ff8040'); return; }
+      if (!spendFire(fireCost)) { showPopup(t('popNoFire'),'#ff8040'); return; }
       gs.hunger = Math.min(100, gs.hunger+28);
       gs.mood   = Math.min(100, gs.mood+5);
       gs.totalHappy += 5;
@@ -3400,6 +3431,7 @@ function doAction(type) {
       break;
     case 'play':
       if (gs.energy<18) { showPopup(t('popTired'),'#80c8ff'); return; }
+      if (fireCost > 0 && !spendFire(fireCost)) { showPopup(t('popNoFire'),'#ff8040'); return; }
       gs.mood   = Math.min(100, gs.mood+22);
       gs.energy = Math.max(0, gs.energy-22);
       gs.totalHappy += 20;
@@ -3421,6 +3453,7 @@ function doAction(type) {
       break;
   }
   updateSubDisplay();
+  updateBtnCosts();
 }
 
 document.getElementById('btn-pet').addEventListener('pointerdown',  ()=>doAction('pet'));
@@ -3745,15 +3778,21 @@ document.getElementById('fire-label').textContent  = t('fireLbl');
 document.getElementById('lbl-mood').textContent    = t('statMood');
 document.getElementById('lbl-hunger').textContent  = t('statHunger');
 document.getElementById('lbl-energy').textContent  = t('statEnergy');
-[
-  { id:'btn-pet',  name:t('pet'),  cost:'♥ +14' },
-  { id:'btn-feed', name:t('feed'), cost:'🔥×2  🍖+28' },
-  { id:'btn-play', name:t('play'), cost:'⚡-22  ♥+22' },
-  { id:'btn-rest', name:t('rest'), cost:'⚡+32' },
-].forEach(({ id, name, cost }) => {
-  document.getElementById(id).innerHTML =
-    `<span class="abtn-name">${name}</span><span class="abtn-cost">${cost}</span>`;
-});
+function updateBtnCosts() {
+  const lv = gs.level;
+  const fc = (n) => n > 0 ? `🔥×${n}  ` : '';
+  const btnData = [
+    { id:'btn-pet',  name:t('pet'),  cost:`${fc(ACTION_FIRE.pet[lv-1])}♥+14` },
+    { id:'btn-feed', name:t('feed'), cost:`${fc(ACTION_FIRE.feed[lv-1])}🍖+28` },
+    { id:'btn-play', name:t('play'), cost:`${fc(ACTION_FIRE.play[lv-1])}⚡-22  ♥+22` },
+    { id:'btn-rest', name:t('rest'), cost:'⚡+32' },
+  ];
+  btnData.forEach(({ id, name, cost }) => {
+    document.getElementById(id).innerHTML =
+      `<span class="abtn-name">${name}</span><span class="abtn-cost">${cost}</span>`;
+  });
+}
+updateBtnCosts();
 document.getElementById('hint').textContent        = t('hint');
 document.getElementById('help-title').textContent  = t('helpTitle');
 document.getElementById('help-body').innerHTML     = t('helpBody');
