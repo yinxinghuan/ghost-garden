@@ -198,7 +198,8 @@
 
     /* ══ ? 按钮 & 玩法说明 ══ */
     #help-btn {
-      width: 32px; height: 32px; flex-shrink: 0; align-self: center;
+      width: 32px; height: 32px; flex-shrink: 0;
+      align-self: flex-start; margin-top: 4px;
       background: rgba(255,255,255,0.07);
       border: 1px solid rgba(160,120,255,0.28);
       border-radius: 50%;
@@ -464,9 +465,15 @@ window._ggStartTs = Date.now();
       popLostGhost:'新朋友！心情+18 灵火+3',
       popMushroom:'灵菇！饱食+30 灵火+1',
       popMeteor:'流星！+5灵火',
+      popSpiritOrb:'灵光！精力+22 灵火+2',
+      popCrystal:'灵晶！+8灵火',
+      popButterfly:'幽蝶！心情+25',
       evtLostGhost:'有幽灵来访！点击它',
       evtMushroom:'灵菇出现！快去点击',
       evtMeteor:'流星！快点击！',
+      evtSpiritOrb:'灵光球出现！点击吸收',
+      evtCrystal:'灵晶降临！快去收集',
+      evtButterfly:'幽蝶飞来！',
       wishPet:'想被摸摸~', wishFeed:'有点饿了...', wishPlay:'我们玩耍吧！', wishRest:'有点累了...',
       evolve:'进化！{n}降临新领地',
       dangerWarn:'危险！{stat}即将耗尽',
@@ -507,9 +514,15 @@ window._ggStartTs = Date.now();
       popLostGhost:'New friend! Mood+18 Flame+3',
       popMushroom:'Mushroom! Food+30 Flame+1',
       popMeteor:'Meteor! +5 Flame',
+      popSpiritOrb:'Spirit orb! Energy+22 Flame+2',
+      popCrystal:'Crystal! +8 Flame',
+      popButterfly:'Butterfly! Mood+25',
       evtLostGhost:'A ghost visits! Tap it',
       evtMushroom:'Magic mushroom! Tap quick',
       evtMeteor:'Meteor! Tap fast!',
+      evtSpiritOrb:'Spirit orb! Tap to absorb',
+      evtCrystal:'Crystal shard! Collect it',
+      evtButterfly:'Ghost butterfly!',
       wishPet:'Want pets~', wishFeed:'A bit hungry...', wishPlay:"Let's play!", wishRest:'Feeling tired...',
       evolve:'Evolution! {n} has arrived',
       dangerWarn:'{stat} is running out!',
@@ -1458,6 +1471,70 @@ const EVENT_DEFS = [
     ttl: 5,
     reward() { addFire(5); showPopup(t('popMeteor'),'#ffdd44'); },
   },
+  {
+    type: 'spiritOrb',
+    build() {
+      const g = new THREE.Group();
+      const outer = new THREE.MeshLambertMaterial({ color:0x60c8ff, emissive:0x2060ff, emissiveIntensity:1.0, transparent:true, opacity:0.82 });
+      const inner = new THREE.MeshLambertMaterial({ color:0xffffff, emissive:0xffffff, emissiveIntensity:2.0 });
+      g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(.18,1), outer));
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(.07,6,5), inner));
+      g.add(Object.assign(new THREE.PointLight(0x40aaff,1.8,3), {position:{y:.1}}));
+      const angle = Math.random()*Math.PI*2, radius = 2.5+Math.random()*1.5;
+      g.userData.angle = angle; g.userData.radius = radius;
+      g.userData.speed = .45+Math.random()*.3;
+      g.position.set(Math.cos(angle)*radius, 2.6, Math.sin(angle)*radius);
+      return g;
+    },
+    ttl: 20,
+    reward() { gs.energy=Math.min(100,gs.energy+22); addFire(2); showPopup(t('popSpiritOrb'),'#60c8ff'); },
+  },
+  {
+    type: 'crystalShard',
+    build() {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshLambertMaterial({ color:0xe0c0ff, emissive:0xa060ff, emissiveIntensity:0.9, transparent:true, opacity:0.92 });
+      [[0,.1,0,.14],[-.12,-.06,0,.09],[.12,-.04,0,.1]].forEach(([x,y,z,r])=>{
+        const s = new THREE.Mesh(new THREE.OctahedronGeometry(r,0), mat.clone());
+        s.position.set(x,y,z); s.rotation.set(Math.random(),Math.random(),Math.random());
+        s.scale.set(1,2.2,1); g.add(s);
+      });
+      g.add(Object.assign(new THREE.PointLight(0xc080ff,2.0,3), {position:{y:.2}}));
+      g.position.set((Math.random()-.5)*6, 5.5, (Math.random()-.5)*6);
+      g.userData.landed = false;
+      return g;
+    },
+    ttl: 16,
+    reward() { addFire(8); showPopup(t('popCrystal'),'#d0a0ff'); },
+  },
+  {
+    type: 'ghostButterfly',
+    build() {
+      const g = new THREE.Group();
+      const wmat = new THREE.MeshLambertMaterial({ color:0xffb0f0, emissive:0xff50c0, emissiveIntensity:.7, transparent:true, opacity:.78, side:THREE.DoubleSide });
+      const wingL = new THREE.Group(), wingR = new THREE.Group();
+      const shapeU = new THREE.ConeGeometry(.22,.32,5); shapeU.rotateZ(Math.PI*.5);
+      const shapeD = new THREE.ConeGeometry(.15,.22,5); shapeD.rotateZ(Math.PI*.5);
+      const wUL = new THREE.Mesh(shapeU, wmat.clone()); wUL.position.set(-.14,.08,0); wingL.add(wUL);
+      const wDL = new THREE.Mesh(shapeD, wmat.clone()); wDL.position.set(-.1,-.14,0); wingL.add(wDL);
+      const wUR = wUL.clone(); wUR.position.x=.14; wingR.add(wUR);
+      const wDR = wDL.clone(); wDR.position.x=.1; wingR.add(wDR);
+      g.add(wingL); g.add(wingR);
+      g.userData.wingL = wingL; g.userData.wingR = wingR;
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(.025,.03,.22,6), new THREE.MeshLambertMaterial({color:0x3a1828}));
+      g.add(body);
+      g.add(Object.assign(new THREE.PointLight(0xff80d0,.9,2.5), {position:{y:.1}}));
+      const sx=(Math.random()-.5)*7, sz=(Math.random()-.5)*7;
+      g.userData.cx=sx; g.userData.cz=sz;
+      g.userData.pa = Math.random()*Math.PI*2;
+      g.userData.pr = 1.5+Math.random()*1.5;
+      g.userData.ps = .55+Math.random()*.4;
+      g.position.set(sx, 2.8, sz);
+      return g;
+    },
+    ttl: 18,
+    reward() { gs.mood=Math.min(100,gs.mood+25); showPopup(t('popButterfly'),'#ffb0f0'); },
+  },
 ];
 
 function spawnEvent() {
@@ -1466,8 +1543,9 @@ function spawnEvent() {
   scene.add(mesh);
   eventObjects.push({ mesh, def, ttl: def.ttl, maxTtl: def.ttl });
   eventSpawnIn = 38 + Math.random()*32;
-  const labels = { lostGhost: t('evtLostGhost'), mushroom: t('evtMushroom'), meteor: t('evtMeteor') };
-  showPopup(labels[def.type], '#b8d8ff');
+  const labelKeys = { lostGhost:'evtLostGhost', mushroom:'evtMushroom', meteor:'evtMeteor',
+                      spiritOrb:'evtSpiritOrb', crystalShard:'evtCrystal', ghostButterfly:'evtButterfly' };
+  showPopup(t(labelKeys[def.type] || 'evtLostGhost'), '#b8d8ff');
 }
 function collectEvent(evt) {
   evt.def.reward(); scene.remove(evt.mesh);
@@ -1487,6 +1565,31 @@ function updateEvents(dt, t) {
     } else if (e.def.type==='mushroom') {
       const s = Math.min(1,(e.maxTtl-e.ttl)*1.5); e.mesh.scale.setScalar(s);
       e.mesh.rotation.y += dt*.4;
+    } else if (e.def.type==='spiritOrb') {
+      e.mesh.userData.angle += e.mesh.userData.speed * dt;
+      const r = e.mesh.userData.radius;
+      e.mesh.position.x = Math.cos(e.mesh.userData.angle)*r;
+      e.mesh.position.z = Math.sin(e.mesh.userData.angle)*r;
+      e.mesh.position.y = 2.6+Math.sin(t*1.9)*.22;
+      e.mesh.rotation.y += dt*1.8;
+    } else if (e.def.type==='crystalShard') {
+      if (!e.mesh.userData.landed) {
+        e.mesh.position.y -= dt*1.5;
+        if (e.mesh.position.y <= 2.4) { e.mesh.userData.landed = true; }
+      } else {
+        e.mesh.position.y = 2.4+Math.sin(t*2.2)*.1;
+      }
+      e.mesh.rotation.y += dt*.6;
+    } else if (e.def.type==='ghostButterfly') {
+      e.mesh.userData.pa += e.mesh.userData.ps * dt;
+      const r = e.mesh.userData.pr;
+      e.mesh.position.x = e.mesh.userData.cx + Math.cos(e.mesh.userData.pa)*r;
+      e.mesh.position.z = e.mesh.userData.cz + Math.sin(e.mesh.userData.pa)*r;
+      e.mesh.position.y = 2.8+Math.sin(t*3.5)*.18;
+      e.mesh.rotation.y = e.mesh.userData.pa + Math.PI*.5;
+      const flap = Math.sin(t*12)*.55;
+      e.mesh.userData.wingL.rotation.y =  flap;
+      e.mesh.userData.wingR.rotation.y = -flap;
     }
     if (e.ttl/e.maxTtl < .25) {
       e.mesh.traverse(c=>{ if(c.isMesh&&c.material.opacity!==undefined){ c.material.transparent=true; c.material.opacity=Math.max(0,e.ttl/e.maxTtl/.25); } });
