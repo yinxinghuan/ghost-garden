@@ -350,7 +350,8 @@
       background: #000; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       font-family: 'Ma Shan Zheng', serif;
-      opacity: 1; transition: opacity 1.2s ease;
+      opacity: 1;
+      transition: background 2.2s ease, opacity 1.2s ease;
       pointer-events: all;
     }
     #intro.done { opacity: 0; pointer-events: none; }
@@ -371,19 +372,20 @@
       font-size: 14px; color: rgba(180,150,255,0.55);
       letter-spacing: 3px; margin-top: 18px; line-height: 1.8;
     }
-    #intro-ghost-orb {
-      width: 72px; height: 72px; border-radius: 50%;
-      margin: 26px auto 10px;
-      animation: gg-orb-pulse 2.2s ease-in-out infinite;
-    }
-    @keyframes gg-orb-pulse {
-      0%,100% { transform:scale(1); filter:brightness(1); }
-      50% { transform:scale(1.12); filter:brightness(1.4); }
-    }
     .intro-ghost-lbl {
-      font-size: 24px; color: #fff; letter-spacing: 6px;
-      margin-top: 8px; text-shadow: 0 0 20px rgba(200,150,255,0.8);
+      font-size: 28px; color: #fff; letter-spacing: 6px;
+      margin-top: 0; text-shadow: 0 0 28px rgba(200,150,255,1), 0 0 60px rgba(160,80,255,.8);
+      animation: gg-lbl-pulse 2.5s ease-in-out infinite;
     }
+    @keyframes gg-lbl-pulse {
+      0%,100% { opacity:.85; } 50% { opacity:1; }
+    }
+    #intro-tap {
+      position: absolute; bottom: 68px; left: 50%; transform: translateX(-50%);
+      font-size: 13px; color: rgba(180,150,255,0.45); letter-spacing: 3px;
+      animation: gg-tap-fade 2s ease-in-out infinite;
+    }
+    @keyframes gg-tap-fade { 0%,100%{opacity:.3;} 50%{opacity:.8;} }
     #intro-skip {
       position: absolute; bottom: 28px; right: 24px;
       background: transparent; border: 1px solid rgba(180,150,255,0.25);
@@ -507,7 +509,6 @@
   <div class="intro-page" id="intro-p2">
     <p class="intro-text">就在这最后的时刻，</p>
     <p class="intro-text">古碑中沉睡的灵气悄然凝聚——</p>
-    <div id="intro-ghost-orb"></div>
     <p class="intro-ghost-lbl" id="intro-ghost-lbl">小幽 诞生了。</p>
   </div>
   <div class="intro-page" id="intro-p3">
@@ -521,6 +522,7 @@
     <div class="intro-dot"></div>
     <div class="intro-dot"></div>
   </div>
+  <div id="intro-tap">轻触翻页</div>
   <button id="intro-skip">跳过</button>
 </div>
 
@@ -2838,46 +2840,71 @@ function showIntroOnce() {
   if (_introShown) return;
   _introShown = true;
 
-  const el = document.getElementById('intro');
-  const pages = [...el.querySelectorAll('.intro-page')];
-  const dots  = [...el.querySelectorAll('.intro-dot')];
-  const orbEl = document.getElementById('intro-ghost-orb');
-  const lblEl = document.getElementById('intro-ghost-lbl');
+  const el      = document.getElementById('intro');
+  const pages   = [...el.querySelectorAll('.intro-page')];
+  const dots    = [...el.querySelectorAll('.intro-dot')];
+  const lblEl   = document.getElementById('intro-ghost-lbl');
+  const tapHint = document.getElementById('intro-tap');
   const skipBtn = document.getElementById('intro-skip');
 
-  // 应用幽灵颜色到光球
-  const hexCol = '#' + ghostDNA.palette.body.toString(16).padStart(6,'0');
-  orbEl.style.background = `radial-gradient(circle at 38% 38%, #fff 0%, ${hexCol} 55%, transparent 80%)`;
-  orbEl.style.boxShadow = `0 0 30px 10px ${hexCol}88`;
-  const ghostNameTxt = window._loc==='en' ? `"${t('ghostName')}" is born.` : `小幽 诞生了。`;
-  lblEl.textContent = ghostNameTxt;
-
-  // 跳过按钮文字
+  // 幽灵名字
+  lblEl.textContent = window._loc==='en' ? `"${t('ghostName')}" is born.` : `小幽 诞生了。`;
   skipBtn.textContent = window._loc==='en' ? 'Skip' : '跳过';
+  tapHint.textContent = window._loc==='en' ? 'tap to continue' : '轻触翻页';
+
+  // 隐藏游戏 UI，避免透明时显示干扰
+  const gameEls = ['hud','stats','actions','hint'].map(id => document.getElementById(id));
+  gameEls.forEach(e => { if(e) e.style.visibility='hidden'; });
 
   el.style.display = 'flex';
+  el.style.background = '#000';
 
   let pageIdx = 0;
+  let busy = false; // 翻页防抖
   pages[0].classList.add('active');
 
-  const PAGE_DUR = 2700;
-  let timer = setInterval(advance, PAGE_DUR);
+  function goToPage(idx) {
+    // 离开出生页时恢复黑色背景
+    if (pageIdx === 2) el.style.background = '#000';
+
+    pages[pageIdx].classList.remove('active');
+    dots[pageIdx] && dots[pageIdx].classList.remove('on');
+    pageIdx = idx;
+
+    if (pageIdx >= pages.length) { dismiss(); return; }
+
+    pages[pageIdx].classList.add('active');
+    dots[pageIdx] && dots[pageIdx].classList.add('on');
+
+    // 进入出生页：背景变透明，幽灵真实形象透出
+    if (pageIdx === 2) {
+      el.style.background = 'rgba(0,0,0,0.08)';
+      tapHint.style.color = 'rgba(255,255,255,0.5)';
+    } else {
+      tapHint.style.color = '';
+    }
+  }
 
   function advance() {
-    pages[pageIdx].classList.remove('active');
-    dots[pageIdx].classList.remove('on');
-    pageIdx++;
-    if (pageIdx >= pages.length) { clearInterval(timer); dismiss(); return; }
-    pages[pageIdx].classList.add('active');
-    dots[pageIdx].classList.add('on');
+    if (busy) return;
+    busy = true;
+    setTimeout(() => { busy = false; }, 600);
+    goToPage(pageIdx + 1);
   }
 
   function dismiss() {
+    el.style.background = '#000';
+    gameEls.forEach(e => { if(e) e.style.visibility=''; });
     el.classList.add('done');
     setTimeout(() => { el.style.display='none'; el.classList.remove('done'); }, 1200);
   }
 
-  skipBtn.addEventListener('pointerdown', () => { clearInterval(timer); dismiss(); });
+  // 点击整个 intro 翻页（跳过按钮除外）
+  el.addEventListener('pointerdown', e => {
+    if (e.target === skipBtn || skipBtn.contains(e.target)) return;
+    advance();
+  });
+  skipBtn.addEventListener('pointerdown', e => { e.stopPropagation(); dismiss(); });
 }
 
 function checkLevel() {
