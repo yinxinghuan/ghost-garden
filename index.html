@@ -1963,7 +1963,7 @@ function triggerDawnTransition() {
   }, 6000);
 }
 
-const DECAY = { mood:18, hunger:28, energy:10 };
+const DECAY = { mood:36, hunger:56, energy:20 };
 const fireEl = document.getElementById('fire-count');
 
 function addFire(n) { gs.fire = Math.min(30, gs.fire+n); fireEl.textContent = gs.fire; }
@@ -1984,7 +1984,7 @@ function updateStats(dt) {
   gs.energy = Math.max(0, gs.energy - (DECAY.energy/60) * dt);
   Object.keys(gs.cd).forEach(k => { if(gs.cd[k]>0) gs.cd[k]-=dt; });
 
-  const DAY_LEN = 60; // 秒（一夜的游戏时长）
+  const DAY_LEN = 40; // 秒（一夜的游戏时长）
   gs.dayTimer += dt;
   // 进度条：夜晚剩余时间
   const frac = gs.dayTimer / DAY_LEN;
