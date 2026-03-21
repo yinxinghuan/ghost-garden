@@ -1650,6 +1650,8 @@ function genGhostDNA() {
     bodyTall:   0.70 + Math.random() * 0.90,
     tailCount:  Math.floor(Math.random() * 5), // 0-4 条尾巴
     tailSize:   0.10 + Math.random() * 0.18,
+    tailShape:  ['sphere', 'sphere', 'box', 'cone'][Math.floor(Math.random() * 4)],
+    tailLayout: Math.random() < 0.4 ? 'ring' : 'line',
     eyeStyle:   ['dots', 'ovals', 'mono', 'wide'][Math.floor(Math.random() * 4)],
     eyeSize:    0.070 + Math.random() * 0.090,
     eyeSep:     0.10 + Math.random() * 0.14,   // 眼睛间距
@@ -1682,13 +1684,31 @@ function buildGhost(level = 1) {
   body.castShadow = true;
   ghostGroup.add(body);
 
-  // ── 下摆波浪凸起
+  // ── 下摆凸起（直线 or 环形 × 球/方/锥）
   for (let i = 0; i < dna.tailCount; i++) {
-    const t = dna.tailCount === 1 ? 0.5 : i / (dna.tailCount - 1);
-    const x = (t - 0.5) * 2 * 0.52 * dna.bodyWide;
-    const bump = new THREE.Mesh(new THREE.SphereGeometry(dna.tailSize, 10, 8), bodyMat);
-    bump.scale.set(1, 0.70, 0.85);
-    bump.position.set(x, -0.50, 0);
+    let bx, bz;
+    if (dna.tailLayout === 'ring') {
+      const ang = (i / dna.tailCount) * Math.PI * 2;
+      const r = 0.38 * dna.bodyWide;
+      bx = Math.sin(ang) * r;
+      bz = Math.cos(ang) * r * 0.7;
+    } else {
+      const t = dna.tailCount === 1 ? 0.5 : i / (dna.tailCount - 1);
+      bx = (t - 0.5) * 2 * 0.52 * dna.bodyWide;
+      bz = 0;
+    }
+    let bump;
+    if (dna.tailShape === 'box') {
+      const s = dna.tailSize * 1.5;
+      bump = new THREE.Mesh(new THREE.BoxGeometry(s, s * 0.75, s * 0.75), bodyMat);
+    } else if (dna.tailShape === 'cone') {
+      bump = new THREE.Mesh(new THREE.ConeGeometry(dna.tailSize, dna.tailSize * 2.2, 5), bodyMat);
+      bump.rotation.z = Math.PI; // 尖朝下
+    } else {
+      bump = new THREE.Mesh(new THREE.SphereGeometry(dna.tailSize, 10, 8), bodyMat);
+      bump.scale.set(1, 0.70, 0.85);
+    }
+    bump.position.set(bx, -0.50, bz);
     ghostGroup.add(bump);
   }
 
