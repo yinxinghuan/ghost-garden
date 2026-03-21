@@ -403,45 +403,50 @@
       animation: gg-tap-fade 2s ease-in-out infinite;
     }
     @keyframes gg-tap-fade { 0%,100%{opacity:.3;} 50%{opacity:.8;} }
-    /* ══ Ending Cinematic ══ */
-    #ending {
-      position: fixed; inset: 0; z-index: 999;
-      background: #000; display: none; flex-direction: column;
-      align-items: center; justify-content: center;
-      font-family: inherit; opacity: 1;
-      transition: background 2.2s ease, opacity 1.2s ease;
-      pointer-events: all;
+    /* ══ Ending Popup ══ */
+    #ending-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(4,2,16,0.82);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.8s ease;
     }
-    #ending.done { opacity: 0; pointer-events: none; }
-    .ending-page {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 40px; text-align: center;
-      opacity: 0; transition: opacity 1.0s ease;
+    #ending-overlay.show { opacity: 1; pointer-events: all; }
+    #ending-panel {
+      width: min(88%, 300px);
+      background: rgba(8,4,28,0.92);
+      border: 1px solid rgba(140,100,255,0.25);
+      border-radius: 20px; padding: 28px 22px 22px;
+      text-align: center;
+      transform: scale(0.88);
+      transition: transform 0.5s cubic-bezier(.2,1.4,.5,1);
     }
-    .ending-page.active { opacity: 1; }
-    #ending-ghost-lbl {
-      position: absolute; bottom: 130px; left: 50%; transform: translateX(-50%);
-      font-size: 22px; color: #ffd080; letter-spacing: 5px; white-space: nowrap;
-      text-shadow: 0 0 28px rgba(255,200,80,1), 0 0 60px rgba(255,140,20,.7);
-      animation: gg-lbl-pulse 2.5s ease-in-out infinite;
+    #ending-overlay.show #ending-panel { transform: scale(1); }
+    #ending-icon { font-size: 46px; opacity: 0.75; margin-bottom: 10px; }
+    #ending-stage {
+      font-size: 13px; letter-spacing: 3px; color: #ffd080;
+      margin-bottom: 14px;
+      text-shadow: 0 0 16px rgba(255,200,80,0.7);
     }
-    #ending-tap {
-      position: absolute; bottom: 88px; left: 50%; transform: translateX(-50%);
-      font-size: 13px; color: rgba(180,150,255,0.45); letter-spacing: 3px;
-      animation: gg-tap-fade 2s ease-in-out infinite; white-space: nowrap;
+    #ending-body {
+      font-size: 14px; line-height: 1.9; letter-spacing: 1px;
+      color: rgba(210,190,255,0.82); margin-bottom: 6px;
     }
-    #ending-retry {
-      position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
-      padding: 10px 36px; background: rgba(140,80,255,0.18);
+    #ending-footer {
+      font-size: 12px; color: rgba(180,155,255,0.45);
+      letter-spacing: 1px; margin-bottom: 0; min-height: 18px;
+    }
+    #ending-continue {
+      margin-top: 20px; width: 100%; height: 46px;
+      background: rgba(140,80,255,0.18);
       border: 1px solid rgba(160,120,255,0.4); border-radius: 23px;
       color: rgba(220,200,255,0.9); font-family: inherit; font-size: 14px;
-      letter-spacing: 2px; cursor: pointer; display: none; white-space: nowrap;
+      letter-spacing: 2px; cursor: pointer;
       -webkit-tap-highlight-color: transparent; touch-action: manipulation;
       transition: background .15s, transform .08s;
     }
-    #ending-retry:active { background: rgba(140,80,255,0.35); transform: scale(0.96); }
+    #ending-continue:active { background: rgba(140,80,255,0.35); transform: scale(0.96); }
 
     #intro-skip {
       position: absolute; bottom: 28px; right: 24px;
@@ -606,13 +611,14 @@
   </div>
 </div>
 
-<div id="ending">
-  <div class="ending-page" id="ending-p0"></div>
-  <div class="ending-page" id="ending-p1"></div>
-  <div class="ending-page" id="ending-p2"></div>
-  <div id="ending-ghost-lbl"></div>
-  <div id="ending-tap"></div>
-  <button id="ending-retry"></button>
+<div id="ending-overlay">
+  <div id="ending-panel">
+    <div id="ending-icon">👻</div>
+    <div id="ending-stage"></div>
+    <div id="ending-body"></div>
+    <div id="ending-footer"></div>
+    <button id="ending-continue"></button>
+  </div>
 </div>
 
 <div id="help-overlay">
@@ -3033,107 +3039,30 @@ function triggerEnding() {
 }
 
 function showEndingScreen() {
-  const lv = gs.level; // 1/2/3
+  const lv = gs.level;
   const ep = t('endingP');
-  const el = document.getElementById('ending');
-  const pages = [...el.querySelectorAll('.ending-page')];
-  const lblEl = document.getElementById('ending-ghost-lbl');
-  const tapEl = document.getElementById('ending-tap');
-  const retryBtn = document.getElementById('ending-retry');
+  const bodyLines = (ep[1] || [])[lv - 1] || [];
+  const footerLines = (ep[2] || [])[lv - 1] || [];
 
-  // 填充文本
-  const p0Lines = ep[0] || [];
-  pages[0].innerHTML = p0Lines.map(l => `<p class="intro-text">${l}</p>`).join('');
+  document.getElementById('ending-stage').textContent = t('stage' + lv);
+  document.getElementById('ending-body').innerHTML = bodyLines.join('<br>');
+  document.getElementById('ending-footer').innerHTML = footerLines.join('<br>');
+  document.getElementById('ending-continue').textContent = t('endingContinue');
 
-  const p1Lines = (ep[1] || [])[lv - 1] || [];
-  pages[1].innerHTML = p1Lines.map(l => `<p class="intro-text">${l}</p>`).join('');
+  const overlay = document.getElementById('ending-overlay');
+  overlay.classList.add('show');
 
-  const p2Lines = (ep[2] || [])[lv - 1] || [];
-  pages[2].innerHTML = p2Lines.map(l => `<p class="intro-sub">${l}</p>`).join('');
-
-  lblEl.textContent = t('stage' + lv);
-  tapEl.textContent = t('endingTap');
-  retryBtn.textContent = t('endingContinue');
-
-  el.style.display = 'flex';
-  el.style.background = '#000';
-
-  let pageIdx = 0;
-  let busy = false;
-  let _endBirthSaved = null;
-  pages[0].classList.add('active');
-
-  function enterGhostScene() {
-    const hidden = [];
-    scene.children.forEach(obj => {
-      if (obj === ghostGroup || obj.isLight) return;
-      if (obj.visible) { obj.visible = false; hidden.push(obj); }
-    });
-    const savedBg = scene.background.clone();
-    const savedFN = scene.fog.near, savedFF = scene.fog.far;
-    const savedPos = camera.position.clone();
-    const savedTgt = controls.target.clone();
-    scene.background = new THREE.Color(0x000000);
-    scene.fog.near = 999; scene.fog.far = 1000;
-    camera.position.set(0, 2.6, 3.2);
-    controls.target.set(0, 2.2, 0);
-    controls.update(); controls.enabled = false;
-    el.style.transition = 'background 1.2s ease';
-    el.style.background = 'rgba(0,0,0,0)';
-    _endBirthSaved = { hidden, savedBg, savedFN, savedFF, savedPos, savedTgt };
-  }
-
-  function leaveGhostScene() {
-    if (!_endBirthSaved) return;
-    const s = _endBirthSaved; _endBirthSaved = null;
-    el.style.transition = 'none';
-    el.style.background = '#000';
-    requestAnimationFrame(() => {
-      s.hidden.forEach(obj => { obj.visible = true; });
-      scene.background = s.savedBg;
-      scene.fog.near = s.savedFN; scene.fog.far = s.savedFF;
-      camera.position.copy(s.savedPos);
-      controls.target.copy(s.savedTgt);
-      controls.update(); controls.enabled = true;
-    });
-  }
-
-  function goToPage(idx) {
-    if (pageIdx === 1) leaveGhostScene();
-    pages[pageIdx].classList.remove('active');
-    pageIdx = idx;
-    if (pageIdx >= pages.length) { finish(); return; }
-    pages[pageIdx].classList.add('active');
-    if (pageIdx === 1) { enterGhostScene(); lblEl.style.opacity='1'; tapEl.style.opacity='1'; }
-    if (pageIdx === 2) { lblEl.style.opacity='0'; tapEl.style.opacity='0'; retryBtn.style.display='block'; }
-  }
-
-  function finish() {
-    if (_endBirthSaved) leaveGhostScene();
-    el.classList.add('done');
-    setTimeout(() => {
-      el.style.display = 'none';
-      el.classList.remove('done');
-      // 恢复游戏继续（不重置，直接继续守护）
-      gs.dead = false;
-      gs.inDayScene = false;
-      if (ghostGroup) ghostGroup.visible = true;
-    }, 1200);
-  }
-
-  lblEl.style.opacity = '0'; tapEl.style.opacity = '0';
-  el.addEventListener('pointerdown', () => {
-    if (busy) return;
-    busy = true; setTimeout(() => { busy = false; }, 700);
-    if (pageIdx === pages.length - 1) { finish(); return; }
-    goToPage(pageIdx + 1);
-  });
-  retryBtn.addEventListener('pointerdown', e => { e.stopPropagation(); finish(); });
+  document.getElementById('ending-continue').onclick = () => {
+    overlay.classList.remove('show');
+    gs.dead = false;
+    gs.inDayScene = false;
+    if (ghostGroup) ghostGroup.visible = true;
+  };
 }
 
 function restartGame() {
   document.getElementById('dead-overlay').classList.remove('show');
-  document.getElementById('ending').style.display = 'none';
+  document.getElementById('ending-overlay').classList.remove('show');
   // 重置状态
   gs.mood=80; gs.hunger=70; gs.energy=90;
   gs.fire=5; gs.totalFire=0; gs.totalHappy=0; gs.level=1;
