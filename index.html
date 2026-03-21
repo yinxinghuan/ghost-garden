@@ -1980,6 +1980,7 @@ const EVENT_DEFS = [
       g.position.set((Math.random()-.5)*5,.1,(Math.random()-.5)*5);
       g.userData.anim='bloom'; g.userData.baseY=.1;
       g.userData.petals=petals; g.userData.center=center;
+      g.scale.setScalar(0.55);
       return g;
     },
     ttl: 25,
@@ -2165,9 +2166,9 @@ function updateEvents(dt, totalElapsed) {
       // 魔法花：花瓣逐片展开 + 摇曳
       const age = e.maxTtl - e.ttl;
       if (age < 0.6) {
-        e.mesh.scale.setScalar(age/0.6);
+        e.mesh.scale.setScalar(0.55 * age/0.6);
       } else {
-        e.mesh.scale.setScalar(1);
+        e.mesh.scale.setScalar(0.55);
         if (e.mesh.userData.petals) {
           const pa = age - 0.6;
           e.mesh.userData.petals.forEach((p, i) => {
