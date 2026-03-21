@@ -1941,6 +1941,16 @@ function buildGhost(level = 1) {
   ghostGroup.position.set(0.3, 2.2, 0.5);
   ghostGlow.position.set(0.3, 2.4, 0.5);
   scene.add(ghostGroup);
+
+  // 收集所有材质，标记透明，供过渡动画使用
+  ghostParts.mats = [];
+  ghostGroup.traverse(obj => {
+    if (obj.isMesh && obj.material && ghostParts.mats.indexOf(obj.material) === -1) {
+      obj.material.transparent = true;
+      obj.material.opacity = 1;
+      ghostParts.mats.push(obj.material);
+    }
+  });
 }
 
 function applyGhostExpression(mood) {
@@ -2958,10 +2968,15 @@ function applyScenePhase(phase) {
 const announceEl = document.getElementById('day-announce');
 if (window._loc === 'en') document.body.classList.add('en');
 
-// 过场：幽灵消失，Three.js 场景经历日出→正午→日落→入夜，太阳弧线划过（共6秒）
+// 过场：幽灵消失，Three.js 场景经历日出→正午→日落→入夜，太阳弧线划过（共~7秒）
 function triggerDawnTransition() {
   gs.inDayScene = true;
-  if (ghostGroup) ghostGroup.visible = false;
+
+  // 幽灵旋转淡出（0.9s）
+  if (ghostGroup) {
+    ghostGroup.visible = true;
+    _ghostFade = { active: true, dir: -1, t: 0, dur: 0.9, spinDir: Math.random() < 0.5 ? 1 : -1 };
+  }
 
   // 重置 CSS 动画
   announceEl.classList.remove('show');
@@ -2970,18 +2985,25 @@ function triggerDawnTransition() {
 
   // Three.js 场景阶段序列
   applyScenePhase('dawn');
-  setTimeout(() => { applyScenePhase('day'); rebuildDomain(); }, 900); // 正午重建场景
+  setTimeout(() => { applyScenePhase('day'); rebuildDomain(); }, 900);
   setTimeout(() => applyScenePhase('dusk'), 4000);
-  setTimeout(() => applyScenePhase('night'),5500);
+  setTimeout(() => applyScenePhase('night'), 5500);
 
   // 文字淡入淡出
   announceEl.classList.add('show');
 
+  // 5.8s 开始幽灵旋转淡入
   setTimeout(() => {
     announceEl.classList.remove('show');
-    if (ghostGroup) ghostGroup.visible = true;
-    gs.inDayScene = false;
-  }, 6000);
+    if (ghostGroup) {
+      ghostGroup.visible = true;
+      if (ghostParts.mats) ghostParts.mats.forEach(m => { m.opacity = 0; });
+      _ghostFade = { active: true, dir: 1, t: 0, dur: 0.9, spinDir: Math.random() < 0.5 ? 1 : -1 };
+    }
+  }, 5800);
+
+  // 6.7s 结束白天过场
+  setTimeout(() => { gs.inDayScene = false; }, 6700);
 }
 
 const DECAY = { mood:75, hunger:85, energy:35 };
@@ -3188,6 +3210,7 @@ function restartGame() {
 // ── INTRO CINEMATIC（首次进入时展示）
 let _introShown = false;
 let _introActive = false;
+let _ghostFade = { active: false, dir: 1, t: 0, dur: 0.9, spinDir: 1 };
 function showIntroOnce() {
   if (_introShown) return;
   _introShown = true;
@@ -3651,6 +3674,32 @@ function animate(ts) {
         const a = o.baseAng + totalT * 0.9;
         o.mesh.position.set(Math.cos(a) * o.r, 0.15 + Math.sin(totalT * 1.5 + o.baseAng) * 0.12, Math.sin(a) * o.r);
       });
+    }
+
+    // 幽灵渐入/渐出过渡动画（覆盖普通旋转与缩放）
+    if (_ghostFade.active) {
+      _ghostFade.t += dt;
+      const p = Math.min(_ghostFade.t / _ghostFade.dur, 1);
+      // 渐出用 ease-in，渐入用 ease-out
+      const eased = _ghostFade.dir === 1 ? p * (2 - p) : p * p;
+      const opacity = _ghostFade.dir === 1 ? eased : 1 - eased;
+      if (ghostParts.mats) ghostParts.mats.forEach(m => { m.opacity = opacity; });
+      ghostGroup.rotation.y = _ghostFade.spinDir * Math.PI * 2 * (1 - opacity);
+      ghostGroup.scale.setScalar(gs.lvScale * (0.55 + opacity * 0.45));
+      if (p >= 1) {
+        _ghostFade.active = false;
+        if (_ghostFade.dir === -1) {
+          // 淡出完成 → 隐藏
+          ghostGroup.visible = false;
+          ghostGroup.scale.setScalar(gs.lvScale);
+          if (ghostParts.mats) ghostParts.mats.forEach(m => { m.opacity = 1; });
+        } else {
+          // 淡入完成 → 恢复
+          ghostGroup.rotation.y = 0;
+          ghostGroup.scale.setScalar(gs.lvScale);
+          if (ghostParts.mats) ghostParts.mats.forEach(m => { m.opacity = 1; });
+        }
+      }
     }
   }
 
