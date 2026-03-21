@@ -384,9 +384,7 @@
 
 <!-- SPLASH -->
 <div id="splash">
-  <img id="splash-img" src="img/poster.png" alt="Ghost Garden" draggable="false"
-       onload="this.classList.add('loaded');document.getElementById('splash-noimg').style.display='none'"
-       onerror="this.style.display='none'">
+  <img id="splash-img" src="img/poster.png" alt="Ghost Garden" draggable="false">
   <div id="splash-noimg">👻</div>
   <div id="splash-bar-track">
     <div id="splash-bar"></div>
@@ -2427,16 +2425,44 @@ helpOverlay.addEventListener('pointerdown', e => {
 
 // ── Splash 进度条动画 + 延迟消失
 {
-  const bar = document.getElementById('splash-bar');
-  bar.style.animation = `gg-splash-bar 2.1s ease-out forwards`;
+  const bar     = document.getElementById('splash-bar');
   const splashEl = document.getElementById('splash');
+  const imgEl   = document.getElementById('splash-img');
+  const noimg   = document.getElementById('splash-noimg');
+  bar.style.animation = `gg-splash-bar 2.1s ease-out forwards`;
+
+  let imgReady = false, timerReady = false;
+
   const hideSplash = () => {
+    if (!imgReady || !timerReady) return;
     splashEl.classList.add('done');
     setTimeout(() => { splashEl.style.display = 'none'; }, 650);
   };
+
+  const onImgReady = () => {
+    if (imgReady) return;
+    imgReady = true;
+    hideSplash();
+  };
+  const onImgLoaded = () => {
+    imgEl.classList.add('loaded');
+    noimg.style.display = 'none';
+    onImgReady();
+  };
+
+  imgEl.addEventListener('load', onImgLoaded);
+  imgEl.addEventListener('error', onImgReady);
+  // Already cached — complete fires before listener registered
+  if (imgEl.complete && imgEl.naturalWidth > 0) onImgLoaded();
+  else if (imgEl.complete) onImgReady(); // error case
+
+  // Minimum display time (from page start)
   const elapsed = Date.now() - window._ggStartTs;
-  const delay = Math.max(0, 2200 - elapsed);
-  setTimeout(hideSplash, delay);
+  const minDelay = Math.max(0, 2200 - elapsed);
+  setTimeout(() => { timerReady = true; hideSplash(); }, minDelay);
+
+  // Safety timeout — never block forever if image hangs
+  setTimeout(onImgReady, 5000);
 }
 
 setTimeout(() => { document.getElementById('hint').style.opacity='0'; }, 5000);
