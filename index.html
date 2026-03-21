@@ -530,6 +530,11 @@ window._ggStartTs = Date.now();
       evtSpiritOrb:'灵光球出现！点击吸收',
       evtCrystal:'灵晶降临！快去收集',
       evtButterfly:'幽蝶飞来！',
+      evtGem:'灵钻！快去拾取', evtStar:'幸运星！', evtEnergy:'能量环！吸收它',
+      evtCandy:'糖果掉落！', evtFlower:'魔法花开了！', evtLantern:'灵笼出现！',
+      popGem:'灵钻！+10灵火', popStar:'幸运星！心情+15 灵火+3',
+      popEnergy:'能量环！精力+30', popCandy:'甜甜糖果！饱食+25',
+      popFlower:'魔法花！心情+18', popLantern:'灵笼！+6灵火 精力+15',
       wishPet:'想被摸摸~', wishFeed:'有点饿了...', wishPlay:'我们玩耍吧！', wishRest:'有点累了...',
       evolve:'进化！{n}降临新领地',
       dangerWarn:'危险！{stat}即将耗尽',
@@ -579,6 +584,11 @@ window._ggStartTs = Date.now();
       evtSpiritOrb:'Spirit orb! Tap to absorb',
       evtCrystal:'Crystal shard! Collect it',
       evtButterfly:'Ghost butterfly!',
+      evtGem:'Spirit gem! Grab it', evtStar:'Lucky star!', evtEnergy:'Energy ring! Absorb it',
+      evtCandy:'Candy drop!', evtFlower:'Magic flower!', evtLantern:'Spirit lantern!',
+      popGem:'Spirit gem! +10 Flame', popStar:'Lucky star! Mood+15 Flame+3',
+      popEnergy:'Energy ring! Energy+30', popCandy:'Sweet candy! Food+25',
+      popFlower:'Magic flower! Mood+18', popLantern:'Spirit lantern! +6 Flame Energy+15',
       wishPet:'Want pets~', wishFeed:'A bit hungry...', wishPlay:"Let's play!", wishRest:'Feeling tired...',
       evolve:'Evolution! {n} has arrived',
       dangerWarn:'{stat} is running out!',
@@ -1666,195 +1676,389 @@ function tickParticles(dt) {
 //  EVENT SYSTEM — 随机事件出现在场景，点击领取奖励
 // ═══════════════════════════════════════════════════════════
 const eventObjects = [];
-let eventSpawnIn = 8 + Math.random()*8;
+let eventSpawnIn = 5 + Math.random()*5;
 
 const EVENT_DEFS = [
+  // ── 迷路幽灵
   {
     type: 'lostGhost',
     build() {
       const g = new THREE.Group();
-      const bm = new THREE.MeshLambertMaterial({ color: 0xd0c8ff, emissive: 0xffffff, emissiveIntensity: .12 });
-      const body = new THREE.Mesh(new THREE.SphereGeometry(.20, 10, 8), bm);
-      body.scale.set(1, 1.2, 1); g.add(body);
-      const lw = new THREE.Mesh(new THREE.SphereGeometry(.20, 10, 8), bm);
-      lw.scale.set(1.05, .52, 1); lw.position.y = -.22; g.add(lw);
-      const em = new THREE.MeshLambertMaterial({ color: 0x0c0a1a });
+      const bm = new THREE.MeshLambertMaterial({ color:0xd0c8ff, emissive:0xffffff, emissiveIntensity:.15 });
+      const body = new THREE.Mesh(new THREE.SphereGeometry(.22,10,8), bm);
+      body.scale.set(1,1.2,1); g.add(body);
+      const lw = new THREE.Mesh(new THREE.SphereGeometry(.22,10,8), bm);
+      lw.scale.set(1.05,.50,1); lw.position.y=-.24; g.add(lw);
+      const em = new THREE.MeshLambertMaterial({ color:0x0c0a1a });
       [-0.07,0.07].forEach(x => {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(.042, 8, 6), em);
-        eye.scale.set(1,1,.2); eye.position.set(x,.06,.20); g.add(eye);
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(.042,8,6), em);
+        eye.scale.set(1,1,.2); eye.position.set(x,.08,.20); g.add(eye);
       });
-      g.add(Object.assign(new THREE.PointLight(0xa080ff,.7,2), { position: { y: .2 } }));
-      const px = (Math.random()>.5?1:-1)*(3.5+Math.random()*1.5), pz = (Math.random()-.5)*6;
+      const pl = new THREE.PointLight(0xa080ff,.8,2.5); pl.position.y=.2; g.add(pl);
+      const px = (Math.random()>.5?1:-1)*(2+Math.random()*1.5), pz=(Math.random()-.5)*4;
       g.position.set(px, 2.8, pz);
+      g.userData.anim='hover'; g.userData.baseY=2.8;
       return g;
     },
-    ttl: 18,
-    reward() { gs.mood = Math.min(100,gs.mood+8); addFire(3); showPopup(t('popLostGhost'),'#c0a0ff'); },
+    ttl: 20,
+    reward() { gs.mood=Math.min(100,gs.mood+8); addFire(3); showPopup(t('popLostGhost'),'#c0a0ff'); },
   },
+  // ── 灵菇
   {
     type: 'mushroom',
     build() {
       const g = new THREE.Group();
-      const stem = new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,.24,7),
-        new THREE.MeshLambertMaterial({ color: 0xddd0c0, flatShading: true }));
-      stem.position.y = .12; g.add(stem);
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(.19,8,6),
-        new THREE.MeshLambertMaterial({ color: 0xcc2828, flatShading: true, emissive: 0x661010, emissiveIntensity: .3 }));
-      cap.scale.set(1,.55,1); cap.position.y = .27; g.add(cap);
-      for (let i=0;i<4;i++){
-        const a = i/4*Math.PI*2;
-        const dot = new THREE.Mesh(new THREE.SphereGeometry(.038,5,4), new THREE.MeshLambertMaterial({color:0xffffff}));
-        dot.position.set(Math.cos(a)*.09,.29,Math.sin(a)*.09); g.add(dot);
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,.28,8),
+        new THREE.MeshLambertMaterial({color:0xddd0c0,flatShading:true}));
+      stem.position.y=.14; g.add(stem);
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(.22,9,7),
+        new THREE.MeshLambertMaterial({color:0xcc2828,flatShading:true,emissive:0x661010,emissiveIntensity:.35}));
+      cap.scale.set(1,.55,1); cap.position.y=.31; g.add(cap);
+      for(let i=0;i<5;i++){
+        const a=i/5*Math.PI*2;
+        const dot=new THREE.Mesh(new THREE.SphereGeometry(.04,5,4),new THREE.MeshLambertMaterial({color:0xffffff}));
+        dot.position.set(Math.cos(a)*.10,.33,Math.sin(a)*.10); g.add(dot);
       }
-      const glow = new THREE.PointLight(0xff4040,.5,1.5); glow.position.y=.3; g.add(glow);
-      g.position.set((Math.random()-.5)*7, .1, (Math.random()-.5)*7);
-      g.scale.setScalar(0); // grows in
+      const pl=new THREE.PointLight(0xff4040,.6,2); pl.position.y=.3; g.add(pl);
+      g.position.set((Math.random()-.5)*6, .1, (Math.random()-.5)*6);
+      g.scale.setScalar(0);
+      g.userData.anim='grow'; g.userData.baseY=.1;
       return g;
     },
-    ttl: 22,
+    ttl: 25,
     reward() { gs.hunger=Math.min(100,gs.hunger+30); addFire(1); showPopup(t('popMushroom'),'#80ee80'); },
   },
+  // ── 流星
   {
     type: 'meteor',
     build() {
       const g = new THREE.Group();
-      const mat = new THREE.MeshLambertMaterial({ color: 0xffee44, emissive: 0xff8800, emissiveIntensity: 1.8 });
-      g.add(new THREE.Mesh(new THREE.SphereGeometry(.18,8,6), mat));
-      for (let i=1;i<=4;i++){
-        const t = new THREE.Mesh(new THREE.SphereGeometry(.18*(1-i*.18),6,4),
-          Object.assign(mat.clone(), { opacity: 1-i*.2, transparent: true }));
-        t.position.set(-i*.22, i*.1, 0); g.add(t);
+      const mat = new THREE.MeshLambertMaterial({color:0xffee44,emissive:0xff8800,emissiveIntensity:2.0});
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(.22,8,6), mat));
+      for(let i=1;i<=3;i++){
+        const t2=new THREE.Mesh(new THREE.SphereGeometry(.22*(1-i*.22),6,4),
+          new THREE.MeshLambertMaterial({color:0xffcc00,emissive:0xff6600,emissiveIntensity:1.5,transparent:true,opacity:1-i*.28}));
+        t2.position.set(-i*.26,i*.12,0); g.add(t2);
       }
-      const pl = new THREE.PointLight(0xffcc00,2.5,4); g.add(pl);
-      g.position.set(-14, 9+Math.random()*3, -5+Math.random()*8);
-      g.userData.vel = new THREE.Vector3(5.5,-1.2,.4+Math.random()*.5);
+      const pl=new THREE.PointLight(0xffcc00,3,5); g.add(pl);
+      g.position.set(-12,8+Math.random()*3,-4+Math.random()*8);
+      g.userData.vel=new THREE.Vector3(4.0,-0.8,.3+Math.random()*.4);
+      g.userData.anim='meteor';
       return g;
     },
-    ttl: 5,
+    ttl: 8,
     reward() { addFire(5); showPopup(t('popMeteor'),'#ffdd44'); },
   },
+  // ── 灵光球
   {
     type: 'spiritOrb',
     build() {
       const g = new THREE.Group();
-      const outer = new THREE.MeshLambertMaterial({ color:0x60c8ff, emissive:0x2060ff, emissiveIntensity:1.0, transparent:true, opacity:0.82 });
-      const inner = new THREE.MeshLambertMaterial({ color:0xffffff, emissive:0xffffff, emissiveIntensity:2.0 });
-      g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(.18,1), outer));
-      g.add(new THREE.Mesh(new THREE.SphereGeometry(.07,6,5), inner));
-      g.add(Object.assign(new THREE.PointLight(0x40aaff,1.8,3), {position:{y:.1}}));
-      const angle = Math.random()*Math.PI*2, radius = 2.5+Math.random()*1.5;
-      g.userData.angle = angle; g.userData.radius = radius;
-      g.userData.speed = .45+Math.random()*.3;
+      const outer = new THREE.MeshLambertMaterial({color:0x60c8ff,emissive:0x2060ff,emissiveIntensity:1.2});
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(.25,10,8), outer));
+      const inner = new THREE.MeshLambertMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:2.5});
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(.10,8,6), inner));
+      const pl=new THREE.PointLight(0x40aaff,2.2,4); pl.position.set(0,.1,0); g.add(pl);
+      const angle=Math.random()*Math.PI*2, radius=1.8+Math.random();
+      g.userData.angle=angle; g.userData.radius=radius; g.userData.speed=.5+Math.random()*.3;
+      g.userData.anim='orbit'; g.userData.baseY=2.6;
       g.position.set(Math.cos(angle)*radius, 2.6, Math.sin(angle)*radius);
       return g;
     },
-    ttl: 20,
+    ttl: 22,
     reward() { gs.energy=Math.min(100,gs.energy+22); addFire(2); showPopup(t('popSpiritOrb'),'#60c8ff'); },
   },
+  // ── 灵晶
   {
     type: 'crystalShard',
     build() {
       const g = new THREE.Group();
-      const mat = new THREE.MeshLambertMaterial({ color:0xe0c0ff, emissive:0xa060ff, emissiveIntensity:0.9, transparent:true, opacity:0.92 });
-      [[0,.1,0,.14],[-.12,-.06,0,.09],[.12,-.04,0,.1]].forEach(([x,y,z,r])=>{
-        const s = new THREE.Mesh(new THREE.OctahedronGeometry(r,0), mat.clone());
-        s.position.set(x,y,z); s.rotation.set(Math.random(),Math.random(),Math.random());
-        s.scale.set(1,2.2,1); g.add(s);
-      });
-      g.add(Object.assign(new THREE.PointLight(0xc080ff,2.0,3), {position:{y:.2}}));
-      g.position.set((Math.random()-.5)*6, 5.5, (Math.random()-.5)*6);
-      g.userData.landed = false;
+      const mat = new THREE.MeshLambertMaterial({color:0xe0c0ff,emissive:0xa060ff,emissiveIntensity:1.2});
+      const core = new THREE.Mesh(new THREE.ConeGeometry(.18,.7,6), mat);
+      core.position.y=.35; g.add(core);
+      const mat2 = new THREE.MeshLambertMaterial({color:0xffd0ff,emissive:0xc080ff,emissiveIntensity:.8});
+      const s2 = new THREE.Mesh(new THREE.ConeGeometry(.11,.45,5), mat2);
+      s2.position.set(.22,.1,0); s2.rotation.z=.6; g.add(s2);
+      const s3 = new THREE.Mesh(new THREE.ConeGeometry(.09,.38,5), mat2);
+      s3.position.set(-.18,.12,.1); s3.rotation.z=-.5; s3.rotation.y=.4; g.add(s3);
+      const pl=new THREE.PointLight(0xc080ff,2.2,3.5); pl.position.set(0,.3,0); g.add(pl);
+      g.position.set((Math.random()-.5)*5, 7, (Math.random()-.5)*5);
+      g.userData.anim='fall'; g.userData.baseY=2.0; g.userData.landed=false;
       return g;
     },
-    ttl: 16,
+    ttl: 18,
     reward() { addFire(8); showPopup(t('popCrystal'),'#d0a0ff'); },
   },
+  // ── 幽蝶
   {
     type: 'ghostButterfly',
     build() {
       const g = new THREE.Group();
-      const wmat = new THREE.MeshLambertMaterial({ color:0xffb0f0, emissive:0xff50c0, emissiveIntensity:.7, transparent:true, opacity:.78, side:THREE.DoubleSide });
-      const wingL = new THREE.Group(), wingR = new THREE.Group();
-      const shapeU = new THREE.ConeGeometry(.22,.32,5); shapeU.rotateZ(Math.PI*.5);
-      const shapeD = new THREE.ConeGeometry(.15,.22,5); shapeD.rotateZ(Math.PI*.5);
-      const wUL = new THREE.Mesh(shapeU, wmat.clone()); wUL.position.set(-.14,.08,0); wingL.add(wUL);
-      const wDL = new THREE.Mesh(shapeD, wmat.clone()); wDL.position.set(-.1,-.14,0); wingL.add(wDL);
-      const wUR = wUL.clone(); wUR.position.x=.14; wingR.add(wUR);
-      const wDR = wDL.clone(); wDR.position.x=.1; wingR.add(wDR);
-      g.add(wingL); g.add(wingR);
-      g.userData.wingL = wingL; g.userData.wingR = wingR;
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(.025,.03,.22,6), new THREE.MeshLambertMaterial({color:0x3a1828}));
+      const wmat = new THREE.MeshLambertMaterial({color:0xffb0f0,emissive:0xff50c0,emissiveIntensity:.8,transparent:true,opacity:.82,side:THREE.DoubleSide});
+      // Body
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(.03,.04,.26,6),
+        new THREE.MeshLambertMaterial({color:0x3a1828,emissive:0x8a2858,emissiveIntensity:.4}));
       g.add(body);
-      g.add(Object.assign(new THREE.PointLight(0xff80d0,.9,2.5), {position:{y:.1}}));
-      const sx=(Math.random()-.5)*7, sz=(Math.random()-.5)*7;
+      // Wings as flat boxes
+      const wL = new THREE.Group(); const wR = new THREE.Group();
+      const wuMat = wmat.clone(); const wdMat = wmat.clone(); wdMat.opacity=.65;
+      const wuL = new THREE.Mesh(new THREE.ConeGeometry(.24,.36,5), wuMat); wuL.position.set(-.15,.10,0); wuL.rotation.z=Math.PI*.55; wL.add(wuL);
+      const wdL = new THREE.Mesh(new THREE.ConeGeometry(.16,.26,4), wdMat); wdL.position.set(-.12,-.15,0); wdL.rotation.z=Math.PI*.6; wL.add(wdL);
+      const wuR = wuL.clone(); wuR.position.x=.15; wuR.rotation.z=-Math.PI*.55; wR.add(wuR);
+      const wdR = wdL.clone(); wdR.position.x=.12; wdR.rotation.z=-Math.PI*.6; wR.add(wdR);
+      g.add(wL); g.add(wR);
+      g.userData.wingL=wL; g.userData.wingR=wR;
+      const pl=new THREE.PointLight(0xff80d0,1.2,3); pl.position.set(0,.1,0); g.add(pl);
+      const sx=(Math.random()-.5)*5, sz=(Math.random()-.5)*5;
       g.userData.cx=sx; g.userData.cz=sz;
-      g.userData.pa = Math.random()*Math.PI*2;
-      g.userData.pr = 1.5+Math.random()*1.5;
-      g.userData.ps = .55+Math.random()*.4;
+      g.userData.pa=Math.random()*Math.PI*2;
+      g.userData.pr=1.2+Math.random()*1.2;
+      g.userData.ps=.6+Math.random()*.4;
+      g.userData.anim='butterfly'; g.userData.baseY=2.8;
       g.position.set(sx, 2.8, sz);
       return g;
     },
-    ttl: 18,
+    ttl: 20,
     reward() { gs.mood=Math.min(100,gs.mood+12); showPopup(t('popButterfly'),'#ffb0f0'); },
+  },
+  // ── 灵钻
+  {
+    type: 'ghostGem',
+    build() {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshLambertMaterial({color:0xffd060,emissive:0xff9900,emissiveIntensity:1.5});
+      const top = new THREE.Mesh(new THREE.ConeGeometry(.22,.28,6), mat);
+      top.position.y=.14; g.add(top);
+      const bot = new THREE.Mesh(new THREE.ConeGeometry(.22,.18,6), mat);
+      bot.rotation.x=Math.PI; bot.position.y=-.09; g.add(bot);
+      const pl=new THREE.PointLight(0xffcc00,2.5,4); pl.position.set(0,.1,0); g.add(pl);
+      g.position.set((Math.random()-.5)*4, 3.2, (Math.random()-.5)*4);
+      g.userData.anim='hover'; g.userData.baseY=3.2;
+      return g;
+    },
+    ttl: 18,
+    reward() { addFire(10); showPopup(t('popGem'),'#ffd060'); },
+  },
+  // ── 幸运星
+  {
+    type: 'luckyStar',
+    build() {
+      const g = new THREE.Group();
+      // Star shape using 5 cones
+      const mat = new THREE.MeshLambertMaterial({color:0xffe840,emissive:0xffcc00,emissiveIntensity:1.8});
+      for(let i=0;i<5;i++){
+        const a=i/5*Math.PI*2 - Math.PI/2;
+        const pt=new THREE.Mesh(new THREE.ConeGeometry(.09,.32,5), mat);
+        pt.position.set(Math.cos(a)*.22, Math.sin(a)*.22, 0);
+        pt.rotation.z=-a + Math.PI/2;
+        g.add(pt);
+      }
+      const core=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),
+        new THREE.MeshLambertMaterial({color:0xffffa0,emissive:0xffee00,emissiveIntensity:2.0}));
+      g.add(core);
+      const pl=new THREE.PointLight(0xffee44,2.0,4); pl.position.set(0,0,0); g.add(pl);
+      g.position.set((Math.random()-.5)*4, 3.5, (Math.random()-.5)*4);
+      g.userData.anim='hover'; g.userData.baseY=3.5;
+      return g;
+    },
+    ttl: 16,
+    reward() { gs.mood=Math.min(100,gs.mood+15); addFire(3); showPopup(t('popStar'),'#ffe840'); },
+  },
+  // ── 能量环
+  {
+    type: 'energyRing',
+    build() {
+      const g = new THREE.Group();
+      // Ring using torus-like cylinder segments
+      const mat = new THREE.MeshLambertMaterial({color:0x40ffcc,emissive:0x00ffaa,emissiveIntensity:1.6,transparent:true,opacity:.85});
+      for(let i=0;i<10;i++){
+        const a=i/10*Math.PI*2;
+        const seg=new THREE.Mesh(new THREE.SphereGeometry(.07,6,5), mat);
+        seg.position.set(Math.cos(a)*.36, 0, Math.sin(a)*.36);
+        g.add(seg);
+      }
+      const inner=new THREE.Mesh(new THREE.SphereGeometry(.10,8,6),
+        new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x80ffee,emissiveIntensity:2.5}));
+      g.add(inner);
+      const pl=new THREE.PointLight(0x00ffcc,2.2,4); pl.position.set(0,0,0); g.add(pl);
+      g.position.set((Math.random()-.5)*3, 2.8, (Math.random()-.5)*3);
+      g.userData.anim='pulse'; g.userData.baseY=2.8;
+      return g;
+    },
+    ttl: 18,
+    reward() { gs.energy=Math.min(100,gs.energy+30); showPopup(t('popEnergy'),'#40ffcc'); },
+  },
+  // ── 糖果
+  {
+    type: 'candyDrop',
+    build() {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshLambertMaterial({color:0xff80c0,emissive:0xff2080,emissiveIntensity:.9});
+      const body=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8), mat);
+      g.add(body);
+      // Stripe
+      const smat=new THREE.MeshLambertMaterial({color:0xffffff,emissive:0xffccee,emissiveIntensity:.5});
+      for(let i=0;i<3;i++){
+        const ring=new THREE.Mesh(new THREE.TorusGeometry(.22,.035,6,12), smat);
+        ring.rotation.x=Math.PI/2; ring.position.y=(i-1)*.12; g.add(ring);
+      }
+      const pl=new THREE.PointLight(0xff60b0,1.8,3); pl.position.set(0,.1,0); g.add(pl);
+      g.position.set((Math.random()-.5)*5, 7, (Math.random()-.5)*5);
+      g.userData.anim='fall'; g.userData.baseY=1.8; g.userData.landed=false;
+      return g;
+    },
+    ttl: 20,
+    reward() { gs.hunger=Math.min(100,gs.hunger+25); showPopup(t('popCandy'),'#ff80c0'); },
+  },
+  // ── 魔法花
+  {
+    type: 'magicFlower',
+    build() {
+      const g = new THREE.Group();
+      const stemMat=new THREE.MeshLambertMaterial({color:0x40c040,emissive:0x20a020,emissiveIntensity:.4});
+      const stem=new THREE.Mesh(new THREE.CylinderGeometry(.04,.05,.4,6), stemMat);
+      stem.position.y=.2; g.add(stem);
+      const colors=[0xff60b0,0xff80d0,0xffa0e0,0xffb0f0,0xffc0ff];
+      for(let i=0;i<6;i++){
+        const a=i/6*Math.PI*2;
+        const pmat=new THREE.MeshLambertMaterial({color:colors[i%colors.length],emissive:0xff50c0,emissiveIntensity:.6});
+        const petal=new THREE.Mesh(new THREE.SphereGeometry(.13,7,5), pmat);
+        petal.scale.set(1,.45,1); petal.position.set(Math.cos(a)*.2,.45,Math.sin(a)*.2); g.add(petal);
+      }
+      const center=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),
+        new THREE.MeshLambertMaterial({color:0xffff80,emissive:0xffee00,emissiveIntensity:1.2}));
+      center.position.y=.45; g.add(center);
+      const pl=new THREE.PointLight(0xff80c0,1.4,2.5); pl.position.set(0,.5,0); g.add(pl);
+      g.position.set((Math.random()-.5)*5,.1,(Math.random()-.5)*5);
+      g.scale.setScalar(0);
+      g.userData.anim='grow'; g.userData.baseY=.1;
+      return g;
+    },
+    ttl: 22,
+    reward() { gs.mood=Math.min(100,gs.mood+18); showPopup(t('popFlower'),'#ff80c0'); },
+  },
+  // ── 灵笼
+  {
+    type: 'ghostLantern',
+    build() {
+      const g = new THREE.Group();
+      const mat=new THREE.MeshLambertMaterial({color:0xffd080,emissive:0xff8800,emissiveIntensity:1.0,transparent:true,opacity:.88});
+      // Lantern body: cylinder
+      const body=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.4,8), mat);
+      g.add(body);
+      // Top + bottom caps
+      const cap=new THREE.MeshLambertMaterial({color:0xcc6600,emissive:0xff4400,emissiveIntensity:.8});
+      [.22,-.22].forEach(y => {
+        const c=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.05,8), cap);
+        c.position.y=y; g.add(c);
+      });
+      // Vertical ribs
+      for(let i=0;i<6;i++){
+        const a=i/6*Math.PI*2;
+        const rib=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.42,4),
+          new THREE.MeshLambertMaterial({color:0x884400}));
+        rib.position.set(Math.cos(a)*.18,0,Math.sin(a)*.18); g.add(rib);
+      }
+      // Glow
+      const pl=new THREE.PointLight(0xff8800,3.0,5); pl.position.set(0,0,0); g.add(pl);
+      // Hanging string
+      const str=new THREE.Mesh(new THREE.CylinderGeometry(.01,.01,.5,4),
+        new THREE.MeshLambertMaterial({color:0xcc8844}));
+      str.position.y=.45; g.add(str);
+      g.position.set((Math.random()-.5)*4, 4.0, (Math.random()-.5)*4);
+      g.userData.anim='hover'; g.userData.baseY=4.0;
+      return g;
+    },
+    ttl: 20,
+    reward() { addFire(6); gs.energy=Math.min(100,gs.energy+15); showPopup(t('popLantern'),'#ffd080'); },
   },
 ];
 
 function spawnEvent() {
+  if (eventObjects.length >= 4) { eventSpawnIn = 4 + Math.random()*4; return; }
   const def = EVENT_DEFS[Math.floor(Math.random()*EVENT_DEFS.length)];
   const mesh = def.build();
   scene.add(mesh);
   eventObjects.push({ mesh, def, ttl: def.ttl, maxTtl: def.ttl });
-  eventSpawnIn = 12 + Math.random()*12;
-  const labelKeys = { lostGhost:'evtLostGhost', mushroom:'evtMushroom', meteor:'evtMeteor',
-                      spiritOrb:'evtSpiritOrb', crystalShard:'evtCrystal', ghostButterfly:'evtButterfly' };
+  eventSpawnIn = 5 + Math.random()*6;
+  const labelKeys = {
+    lostGhost:'evtLostGhost', mushroom:'evtMushroom', meteor:'evtMeteor',
+    spiritOrb:'evtSpiritOrb', crystalShard:'evtCrystal', ghostButterfly:'evtButterfly',
+    ghostGem:'evtGem', luckyStar:'evtStar', energyRing:'evtEnergy',
+    candyDrop:'evtCandy', magicFlower:'evtFlower', ghostLantern:'evtLantern',
+  };
   showPopup(t(labelKeys[def.type] || 'evtLostGhost'), '#b8d8ff');
 }
+
 function collectEvent(evt) {
   evt.def.reward(); scene.remove(evt.mesh);
   const idx = eventObjects.indexOf(evt); if (idx>-1) eventObjects.splice(idx,1);
 }
-function updateEvents(dt, t) {
+
+function updateEvents(dt, totalElapsed) {
   eventSpawnIn -= dt;
   if (eventSpawnIn <= 0) spawnEvent();
   for (let i = eventObjects.length-1; i>=0; i--) {
     const e = eventObjects[i];
     e.ttl -= dt;
-    if (e.def.type==='meteor') {
+    const anim = e.mesh.userData.anim;
+    const baseY = e.mesh.userData.baseY || 2.5;
+
+    if (anim === 'meteor') {
       e.mesh.position.addScaledVector(e.mesh.userData.vel, dt);
-    } else if (e.def.type==='lostGhost') {
-      e.mesh.position.y = 2.8 + Math.sin(t*2)*.15;
-      e.mesh.rotation.y += dt*1.2;
-    } else if (e.def.type==='mushroom') {
-      const s = Math.min(1,(e.maxTtl-e.ttl)*1.5); e.mesh.scale.setScalar(s);
-      e.mesh.rotation.y += dt*.4;
-    } else if (e.def.type==='spiritOrb') {
+
+    } else if (anim === 'orbit') {
       e.mesh.userData.angle += e.mesh.userData.speed * dt;
       const r = e.mesh.userData.radius;
       e.mesh.position.x = Math.cos(e.mesh.userData.angle)*r;
       e.mesh.position.z = Math.sin(e.mesh.userData.angle)*r;
-      e.mesh.position.y = 2.6+Math.sin(t*1.9)*.22;
-      e.mesh.rotation.y += dt*1.8;
-    } else if (e.def.type==='crystalShard') {
+      e.mesh.position.y = baseY + Math.sin(totalElapsed*1.9)*.22;
+      e.mesh.rotation.y += dt*2;
+
+    } else if (anim === 'fall') {
       if (!e.mesh.userData.landed) {
-        e.mesh.position.y -= dt*1.5;
-        if (e.mesh.position.y <= 2.4) { e.mesh.userData.landed = true; }
+        e.mesh.position.y -= dt*2.5;
+        e.mesh.rotation.y += dt*1.5;
+        if (e.mesh.position.y <= baseY) { e.mesh.userData.landed=true; e.mesh.position.y=baseY; }
       } else {
-        e.mesh.position.y = 2.4+Math.sin(t*2.2)*.1;
+        e.mesh.position.y = baseY + Math.sin(totalElapsed*2.5)*.12;
+        e.mesh.rotation.y += dt*.8;
       }
-      e.mesh.rotation.y += dt*.6;
-    } else if (e.def.type==='ghostButterfly') {
+
+    } else if (anim === 'grow') {
+      const age = e.maxTtl - e.ttl;
+      const s = Math.min(1, age*1.2);
+      e.mesh.scale.setScalar(s);
+      e.mesh.rotation.y += dt*.5;
+
+    } else if (anim === 'hover') {
+      e.mesh.position.y = baseY + Math.sin(totalElapsed*2.0 + e.mesh.userData.phase||0)*.18;
+      e.mesh.rotation.y += dt*1.5;
+
+    } else if (anim === 'pulse') {
+      const sc = 1 + Math.sin(totalElapsed*4)*0.12;
+      e.mesh.scale.setScalar(sc);
+      e.mesh.position.y = baseY + Math.sin(totalElapsed*1.8)*.15;
+      e.mesh.rotation.y += dt*2;
+
+    } else if (anim === 'butterfly') {
       e.mesh.userData.pa += e.mesh.userData.ps * dt;
       const r = e.mesh.userData.pr;
       e.mesh.position.x = e.mesh.userData.cx + Math.cos(e.mesh.userData.pa)*r;
       e.mesh.position.z = e.mesh.userData.cz + Math.sin(e.mesh.userData.pa)*r;
-      e.mesh.position.y = 2.8+Math.sin(t*3.5)*.18;
+      e.mesh.position.y = baseY + Math.sin(totalElapsed*3.5)*.18;
       e.mesh.rotation.y = e.mesh.userData.pa + Math.PI*.5;
-      const flap = Math.sin(t*12)*.55;
-      e.mesh.userData.wingL.rotation.y =  flap;
-      e.mesh.userData.wingR.rotation.y = -flap;
+      if (e.mesh.userData.wingL && e.mesh.userData.wingR) {
+        const flap = Math.sin(totalElapsed*12)*.6;
+        e.mesh.userData.wingL.rotation.y =  flap;
+        e.mesh.userData.wingR.rotation.y = -flap;
+      }
     }
+
+    // Fade out when nearly expired
     if (e.ttl/e.maxTtl < .25) {
-      e.mesh.traverse(c=>{ if(c.isMesh&&c.material.opacity!==undefined){ c.material.transparent=true; c.material.opacity=Math.max(0,e.ttl/e.maxTtl/.25); } });
+      const fade = e.ttl/e.maxTtl/.25;
+      e.mesh.traverse(c=>{ if(c.isMesh){ c.material.transparent=true; c.material.opacity=(c.material.opacity||1)*fade; } });
     }
     if (e.ttl<=0) { scene.remove(e.mesh); eventObjects.splice(i,1); }
   }
