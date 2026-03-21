@@ -257,6 +257,62 @@
     }
     #help-close:active { background: rgba(140,90,255,0.2); }
 
+    /* ══ 危险状态 ══ */
+    .sbar.danger { animation: gg-danger-pulse 0.7s ease-in-out infinite alternate; }
+    @keyframes gg-danger-pulse {
+      from { opacity: 1; }
+      to   { opacity: 0.25; }
+    }
+
+    /* ══ 死亡画面 ══ */
+    #dead-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(4,2,16,0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.8s ease;
+    }
+    #dead-overlay.show { opacity: 1; pointer-events: all; }
+    #dead-panel {
+      width: min(88%, 300px);
+      background: rgba(8,4,28,0.92);
+      border: 1px solid rgba(140,100,255,0.25);
+      border-radius: 20px;
+      padding: 28px 22px 22px;
+      text-align: center;
+      transform: scale(0.88);
+      transition: transform 0.5s cubic-bezier(.2,1.4,.5,1);
+    }
+    #dead-overlay.show #dead-panel { transform: scale(1); }
+    #dead-ghost { font-size: 52px; opacity: 0.35; margin-bottom: 12px; }
+    #dead-title {
+      font-size: 15px; letter-spacing: 2px; font-weight: 700;
+      color: #c0a8e8; margin-bottom: 18px;
+    }
+    #dead-days {
+      font-size: 28px; font-weight: 700;
+      color: #ecdeff;
+      text-shadow: 0 0 20px rgba(180,120,255,0.7);
+      margin-bottom: 6px;
+    }
+    #dead-best { font-size: 12px; color: rgba(180,155,255,0.45); letter-spacing: 1px; margin-bottom: 4px; }
+    #dead-new  { font-size: 13px; color: #ffd060; margin-bottom: 0; min-height: 20px; }
+    #dead-retry {
+      margin-top: 20px; width: 100%; height: 46px;
+      background: rgba(140,80,255,0.18);
+      border: 1px solid rgba(160,120,255,0.4);
+      border-radius: 23px;
+      color: rgba(220,200,255,0.9);
+      font-family: inherit; font-size: 14px; letter-spacing: 2px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: background .15s, transform .08s;
+    }
+    #dead-retry:active { background: rgba(140,80,255,0.35); transform: scale(0.96); }
+
     /* ══ 水印 ══ */
     #watermark {
       position: fixed; bottom: 6px; left: 50%; transform: translateX(-50%);
@@ -344,6 +400,17 @@
   <div class="srow"><span class="slabel" id="lbl-energy"></span><div class="strack"><div class="sbar" id="b-energy" style="width:90%"></div></div></div>
 </div>
 
+<div id="dead-overlay">
+  <div id="dead-panel">
+    <div id="dead-ghost">👻</div>
+    <div id="dead-title"></div>
+    <div id="dead-days"></div>
+    <div id="dead-best"></div>
+    <div id="dead-new"></div>
+    <button id="dead-retry"></button>
+  </div>
+</div>
+
 <div id="help-overlay">
   <div id="help-panel">
     <h2 id="help-title"></h2>
@@ -403,6 +470,12 @@ window._ggStartTs = Date.now();
       evtMeteor:'流星！快点击！',
       wishPet:'想被摸摸~', wishFeed:'有点饿了...', wishPlay:'我们玩耍吧！', wishRest:'有点累了...',
       evolve:'进化！{n}降临新领地',
+      dangerWarn:'危险！{stat}即将耗尽',
+      deadTitle:'小幽消散了…',
+      deadStat:'存活了 {n} 天',
+      deadBest:'最长记录：{n} 天',
+      deadNew:'🎉 新纪录！',
+      deadRetry:'再试一次',
       helpTitle:'玩法说明',
       helpClose:'关闭',
       helpBody:`
@@ -440,6 +513,12 @@ window._ggStartTs = Date.now();
       evtMeteor:'Meteor! Tap fast!',
       wishPet:'Want pets~', wishFeed:'A bit hungry...', wishPlay:"Let's play!", wishRest:'Feeling tired...',
       evolve:'Evolution! {n} has arrived',
+      dangerWarn:'{stat} is running out!',
+      deadTitle:'Boo has faded away…',
+      deadStat:'Survived {n} days',
+      deadBest:'Best: {n} days',
+      deadNew:'🎉 New record!',
+      deadRetry:'Try Again',
       helpTitle:'How to Play',
       helpClose:'Close',
       helpBody:`
@@ -1509,6 +1588,7 @@ const gs = {
   day: 1, dayTimer: 0, inDayScene: false,
   cd: { pet:0, feed:0, play:0, rest:0 },
   bounceT: 1.5, playing: false, resting: false, expression: 'happy',
+  dangerTimer: 0, dead: false,
 };
 
 // ── 场景日夜切换（Three.js 灯光 + 背景）
@@ -1594,9 +1674,25 @@ function updateStats(dt) {
     if (lit.length > 1) dimCandle(lit[Math.floor(Math.random()*lit.length)]);
   }
 
+  // ── 危险 / 死亡判定
+  const DANGER_TIME = 20; // 任意属性归零后 20s 未恢复则死亡
+  const anyZero = gs.mood <= 0 || gs.hunger <= 0 || gs.energy <= 0;
+  if (anyZero) {
+    gs.dangerTimer += dt;
+    if (gs.dangerTimer >= DANGER_TIME && !gs.dead) triggerDeath();
+  } else {
+    gs.dangerTimer = 0;
+  }
+
   const avg = (gs.mood+gs.hunger+gs.energy)/3;
   const expr = avg<28?'sad':avg>62?'happy':'neutral';
   if (expr!==gs.expression) { gs.expression=expr; applyGhostExpression(expr); }
+
+  // 危险时属性条脉冲
+  ['mood','hunger','energy'].forEach(k => {
+    const bar = document.getElementById('b-'+k);
+    bar.classList.toggle('danger', gs[k] <= 0);
+  });
 
   document.getElementById('b-mood').style.width   = gs.mood   + '%';
   document.getElementById('b-hunger').style.width = gs.hunger + '%';
@@ -1611,6 +1707,65 @@ function updateSubDisplay() {
   const names = ['', t('stage1'), t('stage2'), t('stage3')];
   document.getElementById('ghost-sub').textContent =
     `${names[gs.level]} · ${t('dayN', {n: gs.day})}`;
+}
+
+// ── 死亡 + 结算
+function triggerDeath() {
+  gs.dead = true;
+  snd.dayEnd();
+  // 幽灵缩小消散
+  if (ghostGroup) {
+    const shrink = () => {
+      if (!ghostGroup) return;
+      ghostGroup.scale.multiplyScalar(0.94);
+      ghostGroup.position.y -= 0.04;
+      ghostGlow.intensity *= 0.88;
+      if (ghostGroup.scale.x > 0.05) requestAnimationFrame(shrink);
+      else { ghostGroup.visible = false; showDeadScreen(); }
+    };
+    shrink();
+  } else {
+    showDeadScreen();
+  }
+}
+
+function showDeadScreen() {
+  const hs = parseInt(localStorage.getItem('gg_best_days') || '0');
+  const isNew = gs.day > hs;
+  if (isNew) localStorage.setItem('gg_best_days', gs.day);
+  const best = isNew ? gs.day : hs;
+
+  document.getElementById('dead-title').textContent = t('deadTitle');
+  document.getElementById('dead-days').textContent  = t('deadStat', {n: gs.day});
+  document.getElementById('dead-best').textContent  = t('deadBest', {n: best});
+  document.getElementById('dead-new').textContent   = isNew ? t('deadNew') : '';
+  document.getElementById('dead-retry').textContent = t('deadRetry');
+  document.getElementById('dead-overlay').classList.add('show');
+}
+
+function restartGame() {
+  document.getElementById('dead-overlay').classList.remove('show');
+  // 重置状态
+  gs.mood=80; gs.hunger=70; gs.energy=90;
+  gs.fire=5; gs.totalHappy=0; gs.level=1;
+  gs.day=1; gs.dayTimer=0; gs.inDayScene=false;
+  gs.cd.pet=0; gs.cd.feed=0; gs.cd.play=0; gs.cd.rest=0;
+  gs.bounceT=1.5; gs.playing=false; gs.resting=false; gs.expression='happy';
+  gs.dangerTimer=0; gs.dead=false;
+  // UI
+  document.getElementById('fire-count').textContent = gs.fire;
+  document.getElementById('day-fill').style.width   = '100%';
+  document.getElementById('b-mood').style.width     = gs.mood   + '%';
+  document.getElementById('b-hunger').style.width   = gs.hunger + '%';
+  document.getElementById('b-energy').style.width   = gs.energy + '%';
+  ['mood','hunger','energy'].forEach(k => document.getElementById('b-'+k).classList.remove('danger'));
+  applyScenePhase('night');
+  updateSubDisplay();
+  // 重置蜡烛
+  candleSlots.forEach(s => { if (!s.lit) relightCandle(s); });
+  // 重建幽灵
+  genGhostDNA();
+  buildGhost(1);
 }
 
 function checkLevel() {
@@ -1731,6 +1886,8 @@ function animate(ts) {
   const dt = Math.min((ts-lastTs)*.001, .05);
   lastTs=ts; totalT+=dt;
 
+  if (gs.dead) { controls.update(); renderer.render(scene, camera); return; }
+
   updateStats(dt);
   updateCandles(dt, totalT);
   updateEvents(dt, totalT);
@@ -1812,6 +1969,9 @@ document.getElementById('help-title').textContent  = t('helpTitle');
 document.getElementById('help-body').innerHTML     = t('helpBody');
 document.getElementById('help-close').textContent  = t('helpClose');
 updateSubDisplay();
+
+// ── 死亡重启
+document.getElementById('dead-retry').addEventListener('pointerdown', restartGame);
 
 // ── 玩法说明开关
 const helpOverlay = document.getElementById('help-overlay');
