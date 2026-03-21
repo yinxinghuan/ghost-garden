@@ -2195,7 +2195,7 @@ const ENEMY_DEFS = [
         const eye = new THREE.Mesh(new THREE.SphereGeometry(.016,5,5), eMat);
         eye.position.set(.22,.17,ez); g.add(eye);
       });
-      g.position.set((Math.random()-.5)*7, 0, (Math.random()-.5)*7);
+      g.position.set((Math.random()-.5)*4, 0, (Math.random()-.5)*4);
       g.userData.vx=(Math.random()-.5)*1.2; g.userData.vz=(Math.random()-.5)*1.2; g.userData.dirT=0;
       g.scale.setScalar(0.9);
       return g;
@@ -2222,7 +2222,7 @@ const ENEMY_DEFS = [
         eye.position.set(ex,.65,.09); g.add(eye);
       });
       const pl = new THREE.PointLight(0x44ee44,.5,2); pl.position.y=.5; g.add(pl);
-      g.position.set((Math.random()>.5?1:-1)*(3.5+Math.random()*1.5), 0, (Math.random()-.5)*6);
+      g.position.set((Math.random()>.5?1:-1)*(1.8+Math.random()*1.0), 0, (Math.random()-.5)*3.5);
       g.userData.shambleT=0;
       g.scale.setScalar(0.85);
       return g;
@@ -2513,89 +2513,160 @@ const treeList = [], tombstoneList = [], constructionList = [];
 function rnd(r) { return (Math.random()-.5)*2*r; }
 
 // ── 施工场景物件
-function buildTrafficCone(x, z) {
+function buildStonePile(x, z) {
   const g = new THREE.Group();
-  const mat = new THREE.MeshLambertMaterial({color:0xff6600,emissive:0x441100,emissiveIntensity:.35});
-  const body = new THREE.Mesh(new THREE.ConeGeometry(.11,.44,8), mat);
-  body.position.y=.22; g.add(body);
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.05,8),
-    new THREE.MeshLambertMaterial({color:0x222222}));
-  base.position.y=.025; g.add(base);
-  const stripe = new THREE.Mesh(new THREE.CylinderGeometry(.125,.125,.04,8),
-    new THREE.MeshLambertMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:.3}));
-  stripe.position.y=.17; g.add(stripe);
-  g.position.set(x, 0, z); g.rotation.y=Math.random()*Math.PI*2;
-  return g;
-}
-function buildBarricade(x, z, ry=0) {
-  const g = new THREE.Group();
-  const yMat = new THREE.MeshLambertMaterial({color:0xffcc00,emissive:0x442200,emissiveIntensity:.2});
-  const bMat = new THREE.MeshLambertMaterial({color:0x222222});
-  const plank = new THREE.Mesh(new THREE.BoxGeometry(.9,.12,.12), yMat);
-  plank.position.y=.38; g.add(plank);
-  [-0.32, 0.32].forEach(lx => {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.42,6), bMat);
-    leg.position.set(lx,.21,0); leg.rotation.z=.1; g.add(leg);
-  });
-  g.position.set(x,0,z); g.rotation.y=ry;
-  return g;
-}
-function buildScaffoldPole(x, z) {
-  const g = new THREE.Group();
-  const mat = new THREE.MeshLambertMaterial({color:0x999999,emissive:0x333333,emissiveIntensity:.15});
-  const vp = new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,2.2,6), mat);
-  vp.position.y=1.1; g.add(vp);
-  const hp = new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,1.4,6), mat);
-  hp.rotation.z=Math.PI/2; hp.position.y=1.1; g.add(hp);
+  const mat = new THREE.MeshLambertMaterial({color:0x888880,emissive:0x222220,emissiveIntensity:.15});
+  const counts = 4 + Math.floor(Math.random()*3);
+  for (let i=0;i<counts;i++) {
+    const w=.18+Math.random()*.22, h=.10+Math.random()*.14, d=.16+Math.random()*.18;
+    const s = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
+    s.position.set(rnd(.22), h*.5, rnd(.18));
+    s.rotation.y=Math.random()*Math.PI; s.rotation.z=rnd(.18);
+    s.castShadow=true; g.add(s);
+  }
   g.position.set(x,0,z);
+  return g;
+}
+function buildWoodPlanks(x, z) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshLambertMaterial({color:0x8B6340,emissive:0x3a2010,emissiveIntensity:.18});
+  const count = 3 + Math.floor(Math.random()*3);
+  for (let i=0;i<count;i++) {
+    const plank = new THREE.Mesh(new THREE.BoxGeometry(.9+Math.random()*.4,.06,.14+Math.random()*.06), mat);
+    plank.position.set(rnd(.1), .04+i*.055, rnd(.08));
+    plank.rotation.y=rnd(.3); plank.castShadow=true; g.add(plank);
+  }
+  g.position.set(x,0,z); g.rotation.y=Math.random()*Math.PI*2;
+  return g;
+}
+function buildPipe(x, z) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshLambertMaterial({color:0x7a7a7a,emissive:0x222222,emissiveIntensity:.2});
+  const count = 2 + Math.floor(Math.random()*2);
+  for (let i=0;i<count;i++) {
+    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,.7+Math.random()*.5,10), mat);
+    pipe.rotation.z=Math.PI/2;
+    pipe.position.set(rnd(.15), .10+i*.21, rnd(.12));
+    pipe.castShadow=true; g.add(pipe);
+  }
+  g.position.set(x,0,z); g.rotation.y=Math.random()*Math.PI*2;
+  return g;
+}
+function buildBrickPile(x, z) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshLambertMaterial({color:0xB05030,emissive:0x401808,emissiveIntensity:.2});
+  const rows=2+Math.floor(Math.random()*2), cols=3+Math.floor(Math.random()*2);
+  for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) {
+    const brick = new THREE.Mesh(new THREE.BoxGeometry(.22,.09,.10), mat);
+    brick.position.set((c-.5*(cols-1))*.24+rnd(.02), .05+r*.1, rnd(.04));
+    brick.rotation.y=r%2===0?rnd(.05):rnd(.05)+.13; brick.castShadow=true; g.add(brick);
+  }
+  g.position.set(x,0,z); g.rotation.y=Math.random()*Math.PI*2;
+  return g;
+}
+function buildWheelbarrow(x, z) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshLambertMaterial({color:0x888888,emissive:0x222222,emissiveIntensity:.2});
+  const dirtMat = new THREE.MeshLambertMaterial({color:0x6B4226,emissive:0x1a0800,emissiveIntensity:.15});
+  // 车斗
+  const trough = new THREE.Mesh(new THREE.BoxGeometry(.38,.18,.32), mat);
+  trough.position.y=.28; trough.rotation.x=.2; g.add(trough);
+  // 车斗里的土
+  const dirt = new THREE.Mesh(new THREE.BoxGeometry(.34,.06,.28), dirtMat);
+  dirt.position.y=.38; g.add(dirt);
+  // 两根把手
+  [-0.1,0.1].forEach(hz => {
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.55,6), mat);
+    handle.rotation.z=.5; handle.position.set(-.28,.30,hz); g.add(handle);
+  });
+  // 轮子
+  const wheel = new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,.06,12), mat);
+  wheel.rotation.z=Math.PI/2; wheel.position.set(.22,.12,0); g.add(wheel);
+  g.position.set(x,0,z); g.rotation.y=Math.random()*Math.PI*2;
   return g;
 }
 function buildExcavator(x, z) {
   const g = new THREE.Group();
-  const yMat = new THREE.MeshLambertMaterial({color:0xffcc00,emissive:0x442200,emissiveIntensity:.3});
-  const dMat = new THREE.MeshLambertMaterial({color:0x333333});
-  const wMat = new THREE.MeshLambertMaterial({color:0x88ccff,emissive:0x4488ff,emissiveIntensity:.5,transparent:true,opacity:.7});
-  const body = new THREE.Mesh(new THREE.BoxGeometry(.9,.42,.65), yMat); body.position.y=.4; g.add(body);
-  const cab = new THREE.Mesh(new THREE.BoxGeometry(.52,.34,.5), yMat); cab.position.set(.1,.76,0); g.add(cab);
-  const win = new THREE.Mesh(new THREE.BoxGeometry(.28,.22,.12), wMat); win.position.set(.28,.76,0); g.add(win);
-  [-0.28, 0.28].forEach(tz => {
-    const track = new THREE.Mesh(new THREE.BoxGeometry(.98,.23,.22), dMat);
+  const yMat = new THREE.MeshLambertMaterial({color:0xf5c300,emissive:0x553800,emissiveIntensity:.4});
+  const dMat = new THREE.MeshLambertMaterial({color:0x222222});
+  const wMat = new THREE.MeshLambertMaterial({color:0xaaddff,emissive:0x4488ff,emissiveIntensity:.6,transparent:true,opacity:.75});
+  // 底盘 + 履带
+  const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.1,.28,.78), yMat); chassis.position.y=.18; g.add(chassis);
+  [-0.32,0.32].forEach(tz => {
+    const track = new THREE.Mesh(new THREE.BoxGeometry(1.14,.22,.25), dMat);
     track.position.set(0,.14,tz); g.add(track);
+    // 履带纹理条
+    for(let i=-2;i<=2;i++){
+      const rib=new THREE.Mesh(new THREE.BoxGeometry(.08,.24,.27),dMat);
+      rib.position.set(i*.22,.13,tz); g.add(rib);
+    }
   });
-  const boom = new THREE.Mesh(new THREE.BoxGeometry(.14,.52,.13), yMat);
-  boom.position.set(.55,.72,0); boom.rotation.z=-.38; g.add(boom);
-  const bucket = new THREE.Mesh(new THREE.BoxGeometry(.3,.17,.28), dMat);
-  bucket.position.set(.84,.46,0); g.add(bucket);
+  // 转台
+  const turret = new THREE.Mesh(new THREE.BoxGeometry(.82,.24,.62), yMat); turret.position.set(0,.42,0); g.add(turret);
+  // 驾驶室
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(.52,.40,.52), yMat); cab.position.set(-.12,.72,0); g.add(cab);
+  // 车窗
+  const winF = new THREE.Mesh(new THREE.BoxGeometry(.32,.26,.06), wMat); winF.position.set(-.12,.76,-.3); g.add(winF);
+  const winS = new THREE.Mesh(new THREE.BoxGeometry(.06,.22,.40), wMat); winS.position.set(.24,.74,0); g.add(winS);
+  // 动臂（大臂）
+  const boom = new THREE.Mesh(new THREE.BoxGeometry(.18,.62,.16), yMat);
+  boom.position.set(.5,.78,0); boom.rotation.z=-.45; g.add(boom);
+  // 斗杆（小臂）
+  const stick = new THREE.Mesh(new THREE.BoxGeometry(.13,.45,.13), yMat);
+  stick.position.set(.82,.50,0); stick.rotation.z=-.8; g.add(stick);
+  // 铲斗
+  const bucket = new THREE.Mesh(new THREE.BoxGeometry(.38,.16,.32), dMat);
+  bucket.position.set(1.08,.26,0); bucket.rotation.z=.3; g.add(bucket);
+  // 铲斗齿
+  for(let i=-1;i<=1;i++){
+    const tooth=new THREE.Mesh(new THREE.ConeGeometry(.03,.08,4),dMat);
+    tooth.position.set(1.22,.20,i*.10); tooth.rotation.z=Math.PI*.15; g.add(tooth);
+  }
   g.position.set(x,0,z); g.rotation.y=Math.random()*Math.PI*2;
+  g.scale.setScalar(1.15);
   return g;
 }
 function buildConstructionSite(day) {
   constructionList.forEach(m => scene.remove(m)); constructionList.length = 0;
   if (day < 3) return;
-  // 路锥（第3天起）
-  const coneXZ = [[-4.5,.5],[4.2,-.3],[-3.8,-2.5],[3.5,2.0],[-4.8,2.8],[4.6,1.8]];
-  const numCones = day >= 7 ? 6 : day >= 5 ? 4 : 2;
-  for (let i=0;i<numCones;i++) {
-    const c = buildTrafficCone(coneXZ[i][0]+rnd(.4), coneXZ[i][1]+rnd(.4));
-    scene.add(c); constructionList.push(c);
+  // 石块堆（第3天起），位置控制在 ±2.5 内
+  const stoneXZ = [[-2.2,.8],[2.0,-.6],[-1.8,-2.0],[2.4,1.8],[-2.8,2.2],[2.6,-2.4]];
+  const numStones = day >= 7 ? 4 : day >= 5 ? 3 : 2;
+  for (let i=0;i<numStones;i++) {
+    const s = buildStonePile(stoneXZ[i][0]+rnd(.35), stoneXZ[i][1]+rnd(.35));
+    scene.add(s); constructionList.push(s);
   }
-  // 施工护栏（第5天起）
-  if (day >= 5) {
-    [[-4.8,1.5,.3],[4.5,-1.0,-.4],[-2.5,-4.2,.1],[3.2,3.0,.6]].slice(0,day>=8?4:2).forEach(([cx,cz,ry]) => {
-      const b = buildBarricade(cx+rnd(.3), cz+rnd(.3), ry);
-      scene.add(b); constructionList.push(b);
+  // 木材堆（第4天起）
+  if (day >= 4) {
+    [[-2.6,-.5],[1.8,2.2],[-1.4,-2.6],[2.2,-1.8]].slice(0,day>=8?4:2).forEach(([px,pz]) => {
+      const w = buildWoodPlanks(px+rnd(.3), pz+rnd(.3));
+      scene.add(w); constructionList.push(w);
     });
   }
-  // 脚手架（第7天起）
-  if (day >= 7) {
-    [[-4.2,.8],[4.0,1.5],[-3.5,-3.5],[3.8,-2.0]].forEach(([px,pz]) => {
-      const p = buildScaffoldPole(px+rnd(.3), pz+rnd(.3));
+  // 水管（第5天起）
+  if (day >= 5) {
+    [[-2.0,2.4],[2.4,-2.0],[-2.5,-1.2]].slice(0,day>=9?3:2).forEach(([px,pz]) => {
+      const p = buildPipe(px+rnd(.3), pz+rnd(.3));
       scene.add(p); constructionList.push(p);
     });
   }
-  // 挖掘机（第11天起）
-  if (day >= 11) {
-    const exc = buildExcavator(-5.5+rnd(.5), rnd(1.0));
+  // 砖块堆（第6天起）
+  if (day >= 6) {
+    [[2.0,2.6],[-2.4,1.0],[1.6,-2.8]].slice(0,day>=9?3:1).forEach(([px,pz]) => {
+      const b = buildBrickPile(px+rnd(.3), pz+rnd(.3));
+      scene.add(b); constructionList.push(b);
+    });
+  }
+  // 手推车（第8天起）
+  if (day >= 8) {
+    [[-1.6,2.0],[2.2,.6]].slice(0,day>=10?2:1).forEach(([px,pz]) => {
+      const wb = buildWheelbarrow(px+rnd(.3), pz+rnd(.3));
+      scene.add(wb); constructionList.push(wb);
+    });
+  }
+  // 挖掘机（第10天起），固定在安全区域内
+  if (day >= 10) {
+    const exc = buildExcavator(-2.0+rnd(.4), 1.5+rnd(.4));
     scene.add(exc); constructionList.push(exc);
   }
 }
