@@ -1703,7 +1703,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 20,
-    reward() { gs.mood=Math.min(100,gs.mood+8); addFire(3); showPopup(t('popLostGhost'),'#c0a0ff'); },
+    reward() { gs.mood=Math.min(100,gs.mood+8); addFire(1); showPopup(t('popLostGhost'),'#c0a0ff'); },
   },
   // ── 灵菇
   {
@@ -1749,7 +1749,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 8,
-    reward() { addFire(5); showPopup(t('popMeteor'),'#ffdd44'); },
+    reward() { addFire(2); showPopup(t('popMeteor'),'#ffdd44'); },
   },
   // ── 灵光球
   {
@@ -1769,7 +1769,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 22,
-    reward() { gs.energy=Math.min(100,gs.energy+22); addFire(2); showPopup(t('popSpiritOrb'),'#60c8ff'); },
+    reward() { gs.energy=Math.min(100,gs.energy+22); addFire(1); showPopup(t('popSpiritOrb'),'#60c8ff'); },
   },
   // ── 灵晶
   {
@@ -1791,7 +1791,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 18,
-    reward() { addFire(8); showPopup(t('popCrystal'),'#d0a0ff'); },
+    reward() { addFire(3); showPopup(t('popCrystal'),'#d0a0ff'); },
   },
   // ── 幽蝶
   {
@@ -1851,7 +1851,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 18,
-    reward() { addFire(10); showPopup(t('popGem'),'#ffd060'); },
+    reward() { addFire(4); showPopup(t('popGem'),'#ffd060'); },
   },
   // ── 幸运星（自由漂游，随机改向，自旋）
   {
@@ -1881,7 +1881,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 20,
-    reward() { gs.mood=Math.min(100,gs.mood+15); addFire(3); showPopup(t('popStar'),'#ffe840'); },
+    reward() { gs.mood=Math.min(100,gs.mood+15); addFire(1); showPopup(t('popStar'),'#ffe840'); },
   },
   // ── 能量环（竖直轮子高速旋转 + 扩缩脉冲）
   {
@@ -2017,7 +2017,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 22,
-    reward() { addFire(6); gs.energy=Math.min(100,gs.energy+15); showPopup(t('popLantern'),'#ffd080'); },
+    reward() { addFire(2); gs.energy=Math.min(100,gs.energy+15); showPopup(t('popLantern'),'#ffd080'); },
   },
 ];
 
