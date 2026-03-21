@@ -122,7 +122,7 @@
     #actions {
       position: fixed; bottom: 0; left: 0; right: 0;
       padding: 10px 16px 28px;
-      display: flex; justify-content: center; gap: 10px;
+      display: flex; justify-content: center; align-items: center; gap: 10px;
       background: linear-gradient(to top, rgba(6,2,20,0.85) 55%, transparent);
       z-index: 10;
     }
@@ -197,22 +197,21 @@
 
     /* ══ ? 按钮 & 玩法说明 ══ */
     #help-btn {
-      position: fixed; bottom: 96px; left: 16px;
-      width: 32px; height: 32px;
-      background: rgba(8,4,28,0.72);
-      border: 1px solid rgba(140,100,255,0.22);
+      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(160,120,255,0.28);
       border-radius: 50%;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      color: rgba(200,170,255,0.65);
-      font-size: 16px; font-weight: 700;
+      color: rgba(200,170,255,0.7);
+      font-size: 15px; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; z-index: 11;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
-      transition: background .15s, color .15s, transform .08s;
+      transition: background .15s, transform .08s;
+      flex-shrink: 0;
     }
-    #help-btn:active { background: rgba(140,90,255,0.22); transform: scale(0.9); }
+    #help-btn:active { background: rgba(140,90,255,0.22); transform: translateY(-50%) scale(0.9); }
 
     #help-overlay {
       position: fixed; inset: 0; z-index: 100;
@@ -257,6 +256,12 @@
       transition: background .15s;
     }
     #help-close:active { background: rgba(140,90,255,0.2); }
+
+    /* ══ 水印 ══ */
+    #watermark {
+      position: fixed; bottom: 6px; left: 50%; transform: translateX(-50%);
+      height: 14px; opacity: 0.18; pointer-events: none; z-index: 10;
+    }
 
     /* ══ Splash Screen ══ */
     #splash {
@@ -339,8 +344,6 @@
   <div class="srow"><span class="slabel" id="lbl-energy"></span><div class="strack"><div class="sbar" id="b-energy" style="width:90%"></div></div></div>
 </div>
 
-<button id="help-btn">?</button>
-
 <div id="help-overlay">
   <div id="help-panel">
     <h2 id="help-title"></h2>
@@ -348,6 +351,8 @@
     <button id="help-close"></button>
   </div>
 </div>
+
+<img id="watermark" src="img/aigram.svg" alt="" draggable="false">
 
 <div id="popup"></div>
 <div id="wish-bubble"></div>
@@ -360,6 +365,7 @@
   <button class="abtn" id="btn-feed"></button>
   <button class="abtn" id="btn-play"></button>
   <button class="abtn" id="btn-rest"></button>
+  <button id="help-btn">?</button>
 </div>
 
 <script type="importmap">
