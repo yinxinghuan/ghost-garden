@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title id="page-title">幽灵庄园</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       overflow: hidden; background: #1a1240;
-      font-family: 'PingFang SC', 'Noto Sans SC', sans-serif;
+      font-family: 'Ma Shan Zheng', 'PingFang SC', serif;
       color: #e0d0ff; user-select: none;
       border-radius: 24px;
     }
@@ -342,6 +344,64 @@
       height: 14px; opacity: 0.18; pointer-events: none; z-index: 10;
     }
 
+    /* ══ Intro Cinematic ══ */
+    #intro {
+      position: fixed; inset: 0; z-index: 998;
+      background: #000; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-family: 'Ma Shan Zheng', serif;
+      opacity: 1; transition: opacity 1.2s ease;
+      pointer-events: all;
+    }
+    #intro.done { opacity: 0; pointer-events: none; }
+    .intro-page {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px; text-align: center;
+      opacity: 0; transition: opacity 1.0s ease;
+    }
+    .intro-page.active { opacity: 1; }
+    .intro-text {
+      font-size: 21px; color: #e0d0ff; letter-spacing: 4px;
+      line-height: 2; margin: 4px 0;
+      text-shadow: 0 0 24px rgba(160,80,255,0.6);
+    }
+    .intro-sub {
+      font-size: 14px; color: rgba(180,150,255,0.55);
+      letter-spacing: 3px; margin-top: 18px; line-height: 1.8;
+    }
+    #intro-ghost-orb {
+      width: 72px; height: 72px; border-radius: 50%;
+      margin: 26px auto 10px;
+      animation: gg-orb-pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes gg-orb-pulse {
+      0%,100% { transform:scale(1); filter:brightness(1); }
+      50% { transform:scale(1.12); filter:brightness(1.4); }
+    }
+    .intro-ghost-lbl {
+      font-size: 24px; color: #fff; letter-spacing: 6px;
+      margin-top: 8px; text-shadow: 0 0 20px rgba(200,150,255,0.8);
+    }
+    #intro-skip {
+      position: absolute; bottom: 28px; right: 24px;
+      background: transparent; border: 1px solid rgba(180,150,255,0.25);
+      color: rgba(180,150,255,0.45); font-family: 'Ma Shan Zheng', serif;
+      font-size: 13px; padding: 5px 16px; border-radius: 20px;
+      cursor: pointer; touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #intro-progress {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 6px;
+    }
+    .intro-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(180,150,255,0.2); transition: background .4s;
+    }
+    .intro-dot.on { background: rgba(180,150,255,0.7); }
+
     /* ══ Splash Screen ══ */
     #splash {
       position: fixed; inset: 0; z-index: 999;
@@ -432,6 +492,37 @@
   setTimeout(function(){ imgReady = true; timerReady = true; tryHide(); }, 3000);
 })();
 </script>
+
+<!-- INTRO CINEMATIC -->
+<div id="intro" style="display:none">
+  <div class="intro-page" id="intro-p0">
+    <p class="intro-text">那座古老的墓园，</p>
+    <p class="intro-text">已在这片土地上守望了三百年。</p>
+  </div>
+  <div class="intro-page" id="intro-p1">
+    <p class="intro-text">然而推土机的轰鸣声，</p>
+    <p class="intro-text">正在十三天外等待……</p>
+    <p class="intro-sub">时日无多，墓园将被夷为平地。</p>
+  </div>
+  <div class="intro-page" id="intro-p2">
+    <p class="intro-text">就在这最后的时刻，</p>
+    <p class="intro-text">古碑中沉睡的灵气悄然凝聚——</p>
+    <div id="intro-ghost-orb"></div>
+    <p class="intro-ghost-lbl" id="intro-ghost-lbl">小幽 诞生了。</p>
+  </div>
+  <div class="intro-page" id="intro-p3">
+    <p class="intro-text">守护这座墓园，</p>
+    <p class="intro-text">在十三天内长成完全体，</p>
+    <p class="intro-sub">便能与命运抗争到底。</p>
+  </div>
+  <div id="intro-progress">
+    <div class="intro-dot on"></div>
+    <div class="intro-dot"></div>
+    <div class="intro-dot"></div>
+    <div class="intro-dot"></div>
+  </div>
+  <button id="intro-skip">跳过</button>
+</div>
 
 <!-- TOP HUD -->
 <div id="hud">
@@ -537,26 +628,34 @@ window._ggStartTs = Date.now();
       popEnergy:'能量环！精力+30', popCandy:'甜甜糖果！饱食+25',
       popFlower:'魔法花！心情+18', popLantern:'灵笼！+6灵火 精力+15',
       wishPet:'想被摸摸~', wishFeed:'有点饿了...', wishPlay:'我们玩耍吧！', wishRest:'有点累了...',
-      evolve:'进化！{n}降临新领地',
+      evolve:'进化！{n}降临，守护之力增强',
       dangerWarn:'危险！{stat}即将耗尽',
-      deadTitle:'小幽消散了…',
-      deadStat:'存活了 {n} 天',
-      deadBest:'最长记录：{n} 天',
+      deadTitle:'小幽消散了……墓园沦陷。',
+      deadStat:'守护了 {n} 天',
+      deadBest:'最长守护：{n} 天',
       deadNew:'🎉 新纪录！',
-      deadRetry:'再试一次',
+      deadRetry:'再守护一次',
+      evtRat:'老鼠出现！赶走它！', evtZombie:'僵尸来袭！快点击！',
+      popRatShoo:'赶走了！', popZombieShoo:'驱散了僵尸！',
+      popRatDmg:'老鼠偷吃！饱食受损', popZombieDmg:'僵尸侵扰！心情精力受损',
       helpTitle:'玩法说明',
       helpClose:'关闭',
       helpBody:`
+        <b>📖 背景</b><br>
+        这座守望三百年的古老墓园，即将在十三天后被拆除。<br>
+        你的小幽灵必须在十三天内积累足够灵火、长成完全体，方可守护墓园。<br><br>
         <b>👻 养育你的幽灵</b><br>
         保持心情、饱食、精力三项属性不为零，幽灵才会健康成长。<br><br>
         <b>🕯️ 灵火</b><br>
-        点击场景中<b>熄灭的蜡烛</b>可获得灵火，投食需消耗灵火。<br><br>
+        点击场景中<b>熄灭的蜡烛</b>可获得灵火，投食需消耗灵火。<br>
+        <b>积累足够灵火可触发进化</b>（25→成灵，60→大灵）。<br><br>
         <b>🌙 夜晚与白天</b><br>
-        幽灵活跃在夜晚。每天结束时会经历短暂白昼过场，之后进入新的一天。<br><br>
+        幽灵活跃在夜晚。每天结束时会经历短暂白昼，白昼期间随机事件消失，施工材料出现。<br><br>
         <b>✨ 随机事件</b><br>
-        迷路幽灵、灵菇、流星会随机出现——<b>快去点击</b>！<br><br>
-        <b>💜 进化</b><br>
-        随着天数增长，幽灵会进化为更强大的形态。<br><br>
+        迷路幽灵、灵菇、流星会随机出现——<b>快去点击</b>！<br>
+        部分事件需要一定心情或精力才能收集。<br><br>
+        <b>⚠️ 敌人</b><br>
+        老鼠和僵尸会随时出现，不及时赶走会损耗属性！<br><br>
         <b>🔄 视角</b><br>
         拖动画面可旋转3D视角。`,
     },
@@ -591,26 +690,34 @@ window._ggStartTs = Date.now();
       popEnergy:'Energy ring! Energy+30', popCandy:'Sweet candy! Food+25',
       popFlower:'Magic flower! Mood+18', popLantern:'Spirit lantern! +6 Flame Energy+15',
       wishPet:'Want pets~', wishFeed:'A bit hungry...', wishPlay:"Let's play!", wishRest:'Feeling tired...',
-      evolve:'Evolution! {n} has arrived',
+      evolve:'Evolution! {n} arrived — protection grows',
       dangerWarn:'{stat} is running out!',
-      deadTitle:'Boo has faded away…',
-      deadStat:'Survived {n} days',
+      deadTitle:'Boo faded… the cemetery is lost.',
+      deadStat:'Protected for {n} days',
       deadBest:'Best: {n} days',
       deadNew:'🎉 New record!',
-      deadRetry:'Try Again',
+      deadRetry:'Protect Again',
+      evtRat:'A rat! Tap it away!', evtZombie:'Zombie! Tap it!',
+      popRatShoo:'Shooed away!', popZombieShoo:'Zombie repelled!',
+      popRatDmg:'Rat stole food! Food lost', popZombieDmg:'Zombie attack! Mood & Energy lost',
       helpTitle:'How to Play',
       helpClose:'Close',
       helpBody:`
+        <b>📖 Story</b><br>
+        This ancient cemetery, guardian of three centuries, will be demolished in thirteen days.<br>
+        Your ghost must grow to full power before time runs out to protect it.<br><br>
         <b>👻 Care for your ghost</b><br>
         Keep Mood, Food and Energy above zero to help your ghost thrive.<br><br>
         <b>🕯️ Flame</b><br>
-        Tap <b>unlit candles</b> in the scene to earn flame. Feeding costs flame.<br><br>
+        Tap <b>unlit candles</b> in the scene to earn flame. Feeding costs flame.<br>
+        <b>Collect enough flame to evolve</b> (25→Spirit, 60→Elder).<br><br>
         <b>🌙 Night & Day</b><br>
-        Ghosts are active at night. Each day ends with a brief dawn cinematic before the next night begins.<br><br>
+        Ghosts are active at night. During daytime, events vanish and construction appears.<br><br>
         <b>✨ Random Events</b><br>
-        Lost ghosts, magic mushrooms, and meteors appear randomly — <b>tap them fast!</b><br><br>
-        <b>💜 Evolution</b><br>
-        As days pass your ghost evolves into a more powerful form.<br><br>
+        Lost ghosts, mushrooms, meteors appear randomly — <b>tap fast!</b><br>
+        Some events require minimum Mood or Energy to collect.<br><br>
+        <b>⚠️ Enemies</b><br>
+        Rats and zombies appear — tap them before they drain your stats!<br><br>
         <b>🔄 Camera</b><br>
         Drag the scene to rotate the 3D view.`,
     }
@@ -2061,6 +2168,121 @@ function collectEvent(evt) {
   const idx = eventObjects.indexOf(evt); if (idx>-1) eventObjects.splice(idx,1);
 }
 
+// ═══════════════════════════════════════════════════════════
+//  ENEMIES — 老鼠 & 僵尸
+// ═══════════════════════════════════════════════════════════
+const ENEMY_DEFS = [
+  { // 老鼠
+    type: 'rat',
+    build() {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshLambertMaterial({color:0x887766,emissive:0x221100,emissiveIntensity:.25});
+      const body = new THREE.Mesh(new THREE.SphereGeometry(.11,8,6), mat);
+      body.scale.set(1.5,.85,1); body.position.y=.1; g.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(.08,8,6), mat);
+      head.position.set(.18,.12,0); g.add(head);
+      const snout = new THREE.Mesh(new THREE.SphereGeometry(.04,6,5), mat);
+      snout.position.set(.26,.1,0); g.add(snout);
+      const tail = new THREE.Mesh(new THREE.CylinderGeometry(.008,.014,.28,4), mat);
+      tail.position.set(-.24,.1,0); tail.rotation.z=.5; g.add(tail);
+      const eMat = new THREE.MeshLambertMaterial({color:0xff2222,emissive:0xff0000,emissiveIntensity:1.2});
+      [-.025,.025].forEach(ez => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(.016,5,5), eMat);
+        eye.position.set(.22,.17,ez); g.add(eye);
+      });
+      g.position.set((Math.random()-.5)*7, 0, (Math.random()-.5)*7);
+      g.userData.vx=(Math.random()-.5)*1.2; g.userData.vz=(Math.random()-.5)*1.2; g.userData.dirT=0;
+      g.scale.setScalar(0.9);
+      return g;
+    },
+    ttl: 15,
+    damage() { gs.hunger=Math.max(0,gs.hunger-8); showPopup(t('popRatDmg'),'#ff8040',2.5); },
+  },
+  { // 僵尸
+    type: 'zombie',
+    build() {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshLambertMaterial({color:0x55aa66,emissive:0x224422,emissiveIntensity:.4});
+      const body = new THREE.Mesh(new THREE.BoxGeometry(.22,.35,.18), mat);
+      body.position.y=.3; g.add(body);
+      const head = new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.18), mat);
+      head.position.y=.62; g.add(head);
+      [-1,1].forEach(s => {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(.08,.28,.1), mat);
+        arm.position.set(s*.18,.46,0.1); arm.rotation.z=s*.6; g.add(arm);
+      });
+      const eMat = new THREE.MeshLambertMaterial({color:0xffcc00,emissive:0xffaa00,emissiveIntensity:1.3});
+      [-.04,.04].forEach(ex => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(.024,5,5), eMat);
+        eye.position.set(ex,.65,.09); g.add(eye);
+      });
+      const pl = new THREE.PointLight(0x44ee44,.5,2); pl.position.y=.5; g.add(pl);
+      g.position.set((Math.random()>.5?1:-1)*(3.5+Math.random()*1.5), 0, (Math.random()-.5)*6);
+      g.userData.shambleT=0;
+      g.scale.setScalar(0.85);
+      return g;
+    },
+    ttl: 20,
+    damage() { gs.mood=Math.max(0,gs.mood-10); gs.energy=Math.max(0,gs.energy-5); showPopup(t('popZombieDmg'),'#44ff44',2.5); },
+  },
+];
+const enemyObjects = [];
+let enemySpawnIn = 35 + Math.random()*20;
+
+function spawnEnemy() {
+  if (enemyObjects.length >= 2) { enemySpawnIn = 20 + Math.random()*15; return; }
+  if (gs.day < 2 && Math.random() < .7) { enemySpawnIn = 25+Math.random()*10; return; }
+  // 天数越多敌人越频繁
+  const def = ENEMY_DEFS[gs.day >= 4 && Math.random()<.45 ? 1 : 0];
+  const mesh = def.build();
+  scene.add(mesh);
+  enemyObjects.push({mesh, def, ttl:def.ttl, maxTtl:def.ttl});
+  enemySpawnIn = Math.max(18, 38 - gs.day*1.5) + Math.random()*12;
+  showPopup(t(def.type==='rat'?'evtRat':'evtZombie'), def.type==='rat'?'#ffaa66':'#66ff88', 2.5);
+}
+
+function collectEnemy(enemy) {
+  scene.remove(enemy.mesh);
+  const idx = enemyObjects.indexOf(enemy); if(idx>-1) enemyObjects.splice(idx,1);
+  showPopup(t(enemy.def.type==='rat'?'popRatShoo':'popZombieShoo'), '#a0ffb0', 1.5);
+}
+
+function updateEnemies(dt, totalElapsed) {
+  if (gs.inDayScene) return;
+  enemySpawnIn -= dt;
+  if (enemySpawnIn <= 0) spawnEnemy();
+  for (let i=enemyObjects.length-1;i>=0;i--) {
+    const e = enemyObjects[i]; e.ttl -= dt;
+    const m = e.mesh;
+    if (e.def.type === 'rat') {
+      m.userData.dirT += dt;
+      if (m.userData.dirT > 1.2+Math.random()) {
+        m.userData.dirT=0;
+        m.userData.vx=(Math.random()-.5)*1.4; m.userData.vz=(Math.random()-.5)*1.4;
+      }
+      m.position.x+=m.userData.vx*dt; m.position.z+=m.userData.vz*dt;
+      if(Math.abs(m.position.x)>5) m.userData.vx*=-1;
+      if(Math.abs(m.position.z)>5) m.userData.vz*=-1;
+      m.rotation.y=Math.atan2(m.userData.vx, m.userData.vz);
+      m.position.y=0.05+Math.abs(Math.sin(totalElapsed*10))*.04;
+    } else {
+      m.userData.shambleT+=dt;
+      if (ghostGroup) {
+        const dx=ghostGroup.position.x-m.position.x, dz=ghostGroup.position.z-m.position.z;
+        const dist=Math.sqrt(dx*dx+dz*dz);
+        if(dist>0.4){m.position.x+=dx/dist*.25*dt;m.position.z+=dz/dist*.25*dt;m.rotation.y=Math.atan2(dx,dz);}
+      }
+      m.rotation.x=Math.sin(m.userData.shambleT*3)*.14;
+      m.position.y=Math.abs(Math.sin(m.userData.shambleT*4))*.05;
+    }
+    if (e.ttl/e.maxTtl < .3) {
+      const fade=e.ttl/e.maxTtl/.3;
+      m.traverse(c=>{if(c.isMesh){c.material.transparent=true;c.material.opacity=(c.material.opacity||1)*fade;}});
+    }
+    if (e.ttl<=0) { e.def.damage(); scene.remove(m); enemyObjects.splice(i,1); }
+  }
+}
+
 function updateEvents(dt, totalElapsed) {
   eventSpawnIn -= dt;
   if (eventSpawnIn <= 0) spawnEvent();
@@ -2282,15 +2504,108 @@ function updateWish(dt) {
 // ═══════════════════════════════════════════════════════════
 //  SCENE REBUILD — 进化时整个领地随机重生
 // ═══════════════════════════════════════════════════════════
-const treeList = [], tombstoneList = [];
+const treeList = [], tombstoneList = [], constructionList = [];
 function rnd(r) { return (Math.random()-.5)*2*r; }
+
+// ── 施工场景物件
+function buildTrafficCone(x, z) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshLambertMaterial({color:0xff6600,emissive:0x441100,emissiveIntensity:.35});
+  const body = new THREE.Mesh(new THREE.ConeGeometry(.11,.44,8), mat);
+  body.position.y=.22; g.add(body);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.05,8),
+    new THREE.MeshLambertMaterial({color:0x222222}));
+  base.position.y=.025; g.add(base);
+  const stripe = new THREE.Mesh(new THREE.CylinderGeometry(.125,.125,.04,8),
+    new THREE.MeshLambertMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:.3}));
+  stripe.position.y=.17; g.add(stripe);
+  g.position.set(x, 0, z); g.rotation.y=Math.random()*Math.PI*2;
+  return g;
+}
+function buildBarricade(x, z, ry=0) {
+  const g = new THREE.Group();
+  const yMat = new THREE.MeshLambertMaterial({color:0xffcc00,emissive:0x442200,emissiveIntensity:.2});
+  const bMat = new THREE.MeshLambertMaterial({color:0x222222});
+  const plank = new THREE.Mesh(new THREE.BoxGeometry(.9,.12,.12), yMat);
+  plank.position.y=.38; g.add(plank);
+  [-0.32, 0.32].forEach(lx => {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.42,6), bMat);
+    leg.position.set(lx,.21,0); leg.rotation.z=.1; g.add(leg);
+  });
+  g.position.set(x,0,z); g.rotation.y=ry;
+  return g;
+}
+function buildScaffoldPole(x, z) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshLambertMaterial({color:0x999999,emissive:0x333333,emissiveIntensity:.15});
+  const vp = new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,2.2,6), mat);
+  vp.position.y=1.1; g.add(vp);
+  const hp = new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,1.4,6), mat);
+  hp.rotation.z=Math.PI/2; hp.position.y=1.1; g.add(hp);
+  g.position.set(x,0,z);
+  return g;
+}
+function buildExcavator(x, z) {
+  const g = new THREE.Group();
+  const yMat = new THREE.MeshLambertMaterial({color:0xffcc00,emissive:0x442200,emissiveIntensity:.3});
+  const dMat = new THREE.MeshLambertMaterial({color:0x333333});
+  const wMat = new THREE.MeshLambertMaterial({color:0x88ccff,emissive:0x4488ff,emissiveIntensity:.5,transparent:true,opacity:.7});
+  const body = new THREE.Mesh(new THREE.BoxGeometry(.9,.42,.65), yMat); body.position.y=.4; g.add(body);
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(.52,.34,.5), yMat); cab.position.set(.1,.76,0); g.add(cab);
+  const win = new THREE.Mesh(new THREE.BoxGeometry(.28,.22,.12), wMat); win.position.set(.28,.76,0); g.add(win);
+  [-0.28, 0.28].forEach(tz => {
+    const track = new THREE.Mesh(new THREE.BoxGeometry(.98,.23,.22), dMat);
+    track.position.set(0,.14,tz); g.add(track);
+  });
+  const boom = new THREE.Mesh(new THREE.BoxGeometry(.14,.52,.13), yMat);
+  boom.position.set(.55,.72,0); boom.rotation.z=-.38; g.add(boom);
+  const bucket = new THREE.Mesh(new THREE.BoxGeometry(.3,.17,.28), dMat);
+  bucket.position.set(.84,.46,0); g.add(bucket);
+  g.position.set(x,0,z); g.rotation.y=Math.random()*Math.PI*2;
+  return g;
+}
+function buildConstructionSite(day) {
+  constructionList.forEach(m => scene.remove(m)); constructionList.length = 0;
+  if (day < 3) return;
+  // 路锥（第3天起）
+  const coneXZ = [[-4.5,.5],[4.2,-.3],[-3.8,-2.5],[3.5,2.0],[-4.8,2.8],[4.6,1.8]];
+  const numCones = day >= 7 ? 6 : day >= 5 ? 4 : 2;
+  for (let i=0;i<numCones;i++) {
+    const c = buildTrafficCone(coneXZ[i][0]+rnd(.4), coneXZ[i][1]+rnd(.4));
+    scene.add(c); constructionList.push(c);
+  }
+  // 施工护栏（第5天起）
+  if (day >= 5) {
+    [[-4.8,1.5,.3],[4.5,-1.0,-.4],[-2.5,-4.2,.1],[3.2,3.0,.6]].slice(0,day>=8?4:2).forEach(([cx,cz,ry]) => {
+      const b = buildBarricade(cx+rnd(.3), cz+rnd(.3), ry);
+      scene.add(b); constructionList.push(b);
+    });
+  }
+  // 脚手架（第7天起）
+  if (day >= 7) {
+    [[-4.2,.8],[4.0,1.5],[-3.5,-3.5],[3.8,-2.0]].forEach(([px,pz]) => {
+      const p = buildScaffoldPole(px+rnd(.3), pz+rnd(.3));
+      scene.add(p); constructionList.push(p);
+    });
+  }
+  // 挖掘机（第11天起）
+  if (day >= 11) {
+    const exc = buildExcavator(-5.5+rnd(.5), rnd(1.0));
+    scene.add(exc); constructionList.push(exc);
+  }
+}
 
 function rebuildDomain() {
   // 闪光过渡
   flashEl.style.opacity = '1';
   setTimeout(() => { flashEl.style.opacity = '0'; }, 400);
 
-  // 清除旧的动态对象（事件保留，自然过期）
+  // 清除随机事件（白天消失）
+  eventObjects.forEach(e => scene.remove(e.mesh)); eventObjects.length = 0;
+  // 清除敌人
+  enemyObjects.forEach(e => scene.remove(e.mesh)); enemyObjects.length = 0;
+
+  // 清除旧的动态对象
   treeList.forEach(m => scene.remove(m)); treeList.length = 0;
   tombstoneList.forEach(m => scene.remove(m)); tombstoneList.length = 0;
 
@@ -2311,6 +2626,9 @@ function rebuildDomain() {
 
   // 重建蜡烛（随等级增加数量）
   buildAllCandles(gs.level - 1);
+
+  // 施工场景（随天数加重）
+  buildConstructionSite(gs.day);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2318,7 +2636,7 @@ function rebuildDomain() {
 // ═══════════════════════════════════════════════════════════
 const gs = {
   mood: 80, hunger: 70, energy: 90,
-  fire: 5,
+  fire: 5, totalFire: 0,
   totalHappy: 0, level: 1,
   day: 1, dayTimer: 0, inDayScene: false,
   cd: { pet:0, feed:0, play:0, rest:0 },
@@ -2376,7 +2694,12 @@ function triggerDawnTransition() {
 const DECAY = { mood:75, hunger:85, energy:35 };
 const fireEl = document.getElementById('fire-count');
 
-function addFire(n) { gs.fire = Math.min(30, gs.fire+n); fireEl.textContent = gs.fire; }
+function addFire(n) {
+  gs.fire = Math.min(30, gs.fire+n);
+  gs.totalFire += n;
+  fireEl.textContent = gs.fire;
+  checkLevel();
+}
 function spendFire(n) {
   if (gs.fire < n) return false;
   gs.fire -= n; fireEl.textContent = gs.fire; return true;
@@ -2403,7 +2726,6 @@ function updateStats(dt) {
     gs.dayTimer = 0; gs.day++;
     updateSubDisplay();
     snd.dayEnd();
-    checkLevel();          // 按天数判断升级
     triggerDawnTransition(); // 白天过场（内含场景重建）
     // 随机熄灭一根蜡烛
     const lit = candleSlots.filter(s=>s.lit);
@@ -2483,7 +2805,7 @@ function restartGame() {
   document.getElementById('dead-overlay').classList.remove('show');
   // 重置状态
   gs.mood=80; gs.hunger=70; gs.energy=90;
-  gs.fire=5; gs.totalHappy=0; gs.level=1;
+  gs.fire=5; gs.totalFire=0; gs.totalHappy=0; gs.level=1;
   gs.day=1; gs.dayTimer=0; gs.inDayScene=false;
   gs.cd.pet=0; gs.cd.feed=0; gs.cd.play=0; gs.cd.rest=0;
   gs.bounceT=1.5; gs.playing=false; gs.resting=false; gs.expression='happy';
@@ -2497,22 +2819,75 @@ function restartGame() {
   ['mood','hunger','energy'].forEach(k => document.getElementById('b-'+k).classList.remove('danger'));
   applyScenePhase('night');
   updateSubDisplay();
+  // 清除敌人和施工
+  enemyObjects.forEach(e=>scene.remove(e.mesh)); enemyObjects.length=0;
+  enemySpawnIn=35+Math.random()*20;
+  constructionList.forEach(m=>scene.remove(m)); constructionList.length=0;
   // 重置蜡烛
   candleSlots.forEach(s => { if (!s.lit) relightCandle(s); });
   // 重建幽灵
   genGhostDNA();
   buildGhost(1);
+  // 开场过场（首次）
+  showIntroOnce();
+}
+
+// ── INTRO CINEMATIC（首次进入时展示）
+let _introShown = false;
+function showIntroOnce() {
+  if (_introShown) return;
+  _introShown = true;
+
+  const el = document.getElementById('intro');
+  const pages = [...el.querySelectorAll('.intro-page')];
+  const dots  = [...el.querySelectorAll('.intro-dot')];
+  const orbEl = document.getElementById('intro-ghost-orb');
+  const lblEl = document.getElementById('intro-ghost-lbl');
+  const skipBtn = document.getElementById('intro-skip');
+
+  // 应用幽灵颜色到光球
+  const hexCol = '#' + ghostDNA.palette.body.toString(16).padStart(6,'0');
+  orbEl.style.background = `radial-gradient(circle at 38% 38%, #fff 0%, ${hexCol} 55%, transparent 80%)`;
+  orbEl.style.boxShadow = `0 0 30px 10px ${hexCol}88`;
+  const ghostNameTxt = window._loc==='en' ? `"${t('ghostName')}" is born.` : `小幽 诞生了。`;
+  lblEl.textContent = ghostNameTxt;
+
+  // 跳过按钮文字
+  skipBtn.textContent = window._loc==='en' ? 'Skip' : '跳过';
+
+  el.style.display = 'flex';
+
+  let pageIdx = 0;
+  pages[0].classList.add('active');
+
+  const PAGE_DUR = 2700;
+  let timer = setInterval(advance, PAGE_DUR);
+
+  function advance() {
+    pages[pageIdx].classList.remove('active');
+    dots[pageIdx].classList.remove('on');
+    pageIdx++;
+    if (pageIdx >= pages.length) { clearInterval(timer); dismiss(); return; }
+    pages[pageIdx].classList.add('active');
+    dots[pageIdx].classList.add('on');
+  }
+
+  function dismiss() {
+    el.classList.add('done');
+    setTimeout(() => { el.style.display='none'; el.classList.remove('done'); }, 1200);
+  }
+
+  skipBtn.addEventListener('pointerdown', () => { clearInterval(timer); dismiss(); });
 }
 
 function checkLevel() {
-  // 按天数升级：第4天→成灵，第8天→大灵
-  const newLv = gs.day >= 8 ? 3 : gs.day >= 4 ? 2 : 1;
+  // 按累计灵火升级：25→成灵，60→大灵
+  const newLv = gs.totalFire >= 60 ? 3 : gs.totalFire >= 25 ? 2 : 1;
   if (newLv > gs.level) {
     gs.level = newLv;
     buildGhost(gs.level);
     snd.levelUp();
-    // 进化弹窗在场景重建后显示（triggerDawnTransition 里 900ms 时重建）
-    setTimeout(() => showPopup(t('evolve', {n: t('stage'+gs.level)}), '#ffd060'), 1200);
+    showPopup(t('evolve', {n: t('stage'+gs.level)}), '#ffd060', 3.5);
   }
   updateSubDisplay();
 }
@@ -2603,6 +2978,11 @@ canvas.addEventListener('pointerdown', e => {
       snd.candle();
       gs.bounceT=0; return;
     }
+  }
+
+  // 敌人（点击赶走）
+  for (const enemy of enemyObjects) {
+    if (raycaster.intersectObject(enemy.mesh,true).length>0) { snd.pet(); collectEnemy(enemy); return; }
   }
 
   // 随机事件对象
@@ -2786,6 +3166,7 @@ function animate(ts) {
   updateStats(dt);
   updateCandles(dt, totalT);
   updateEvents(dt, totalT);
+  updateEnemies(dt, totalT);
   updateWish(dt);
   tickParticles(dt);
   updateAmbientFX(totalT);
