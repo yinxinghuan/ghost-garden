@@ -2140,7 +2140,7 @@ function updateEvents(dt, totalElapsed) {
       } else {
         e.mesh.position.y = baseY + Math.sin(totalElapsed*2.5)*.04;
         e.mesh.rotation.y += dt*.8;
-        e.mesh.scale.set(1.06, 0.94, 1.06); // squashed on ground
+        e.mesh.scale.set(0.742, 0.658, 0.742); // squashed on ground (0.7 * 1.06/0.94)
       }
 
     } else if (anim === 'bloom') {
