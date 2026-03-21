@@ -2916,14 +2916,19 @@ function showIntroOnce() {
   function leaveBirthScene() {
     if (!_birthSaved) return;
     const s = _birthSaved; _birthSaved = null;
+    // 先立刻遮住（去掉 transition，瞬间变黑）
+    el.style.transition = 'none';
     el.style.background = '#000';
-    s.hidden.forEach(obj => { obj.visible = true; });
-    scene.background = s.savedBg;
-    scene.fog.near = s.savedFN; scene.fog.far = s.savedFF;
-    camera.position.copy(s.savedPos);
-    controls.target.copy(s.savedTgt);
-    controls.update();
-    controls.enabled = true;
+    // 下一帧再恢复场景，确保黑色已渲染
+    requestAnimationFrame(() => {
+      s.hidden.forEach(obj => { obj.visible = true; });
+      scene.background = s.savedBg;
+      scene.fog.near = s.savedFN; scene.fog.far = s.savedFF;
+      camera.position.copy(s.savedPos);
+      controls.target.copy(s.savedTgt);
+      controls.update();
+      controls.enabled = true;
+    });
   }
 
   function goToPage(idx) {
