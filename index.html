@@ -449,7 +449,7 @@
     #ending-continue:active { background: rgba(140,80,255,0.35); transform: scale(0.96); }
 
     #intro-reroll {
-      position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%);
+      position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%);
       background: rgba(255,255,255,0.07); border: 1px solid rgba(180,150,255,0.3);
       color: rgba(200,170,255,0.75); font-family: inherit;
       font-size: 13px; letter-spacing: 2px; padding: 7px 22px; border-radius: 20px;
@@ -3255,6 +3255,7 @@ function showIntroOnce() {
   // 点击整个 intro 翻页（跳过按钮除外）
   el.addEventListener('pointerdown', e => {
     if (e.target === skipBtn || skipBtn.contains(e.target)) return;
+    if (e.target === rerollBtn || rerollBtn.contains(e.target)) return;
     advance();
   });
   skipBtn.addEventListener('pointerdown', e => { e.stopPropagation(); dismiss(); });
