@@ -1634,19 +1634,27 @@ const GHOST_PALETTES = [
   { body: 0xfff2a0, emissive: 0xffe040, eInt: 0.20 }, // 嫩黄
   { body: 0xffb0cc, emissive: 0xff5890, eInt: 0.20 }, // 粉
   { body: 0x98f0e8, emissive: 0x38e8d0, eInt: 0.22 }, // 水绿
+  { body: 0xffd0a0, emissive: 0xff8030, eInt: 0.22 }, // 橙
+  { body: 0xb0f0a0, emissive: 0x50d830, eInt: 0.22 }, // 草绿
+  { body: 0xffa0b8, emissive: 0xff3060, eInt: 0.24 }, // 珊瑚红
+  { body: 0xa0d0f8, emissive: 0x2080ff, eInt: 0.22 }, // 天蓝
+  { body: 0xe8c0ff, emissive: 0xcc60ff, eInt: 0.26 }, // 深紫
+  { body: 0xffe0b0, emissive: 0xffb020, eInt: 0.20 }, // 暖金
+  { body: 0xc0f8e8, emissive: 0x20e8b0, eInt: 0.22 }, // 青碧
 ];
 
 function genGhostDNA() {
   ghostDNA = {
     palette:    GHOST_PALETTES[Math.floor(Math.random() * GHOST_PALETTES.length)],
-    bodyWide:   0.78 + Math.random() * 0.46,
-    bodyTall:   0.88 + Math.random() * 0.58,
-    tailCount:  2 + Math.floor(Math.random() * 3),
-    tailSize:   0.15 + Math.random() * 0.12,
-    eyeStyle:   ['dots', 'ovals', 'mono'][Math.floor(Math.random() * 3)], // 必有眼睛
-    eyeSize:    0.082 + Math.random() * 0.068,
-    decor:      ['ears', 'glasses', 'bow', 'freckles', 'none'][Math.floor(Math.random() * 5)],
-    armStyle:   ['pointed', 'round', 'none'][Math.floor(Math.random() * 3)],
+    bodyWide:   0.55 + Math.random() * 0.75,  // 更大范围：瘦高到矮胖
+    bodyTall:   0.70 + Math.random() * 0.90,
+    tailCount:  Math.floor(Math.random() * 5), // 0-4 条尾巴
+    tailSize:   0.10 + Math.random() * 0.18,
+    eyeStyle:   ['dots', 'ovals', 'mono', 'wide'][Math.floor(Math.random() * 4)],
+    eyeSize:    0.070 + Math.random() * 0.090,
+    eyeSep:     0.10 + Math.random() * 0.14,   // 眼睛间距
+    decor:      ['ears', 'glasses', 'bow', 'freckles', 'antenna', 'crown', 'none', 'none'][Math.floor(Math.random() * 8)],
+    armStyle:   ['pointed', 'round', 'stubby', 'none'][Math.floor(Math.random() * 4)],
     lvl2feat:   ['horn', 'topears', 'spikes'][Math.floor(Math.random() * 3)],
   };
 }
@@ -1687,9 +1695,10 @@ function buildGhost(level = 1) {
   // ── 眼睛
   ghostParts.eyes = [];
   const EY = 0.22, EZ = 0.42;
+  const sep = dna.eyeSep || 0.16;
   if (dna.eyeStyle === 'dots' || dna.eyeStyle === 'ovals') {
-    const yScale = dna.eyeStyle === 'ovals' ? 1.45 : 1.0;
-    [-0.16, 0.16].forEach(x => {
+    const yScale = dna.eyeStyle === 'ovals' ? 1.55 : 1.0;
+    [-sep, sep].forEach(x => {
       const e = new THREE.Mesh(new THREE.SphereGeometry(dna.eyeSize, 10, 8), eyeMat);
       e.scale.set(1, yScale, 0.16);
       e.position.set(x * dna.bodyWide, EY, EZ);
@@ -1697,11 +1706,20 @@ function buildGhost(level = 1) {
       ghostParts.eyes.push(e);
     });
   } else if (dna.eyeStyle === 'mono') {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(dna.eyeSize * 1.4, 10, 8), eyeMat);
-    e.scale.set(1.1, 1.1, 0.16);
+    const e = new THREE.Mesh(new THREE.SphereGeometry(dna.eyeSize * 1.5, 10, 8), eyeMat);
+    e.scale.set(1.2, 1.2, 0.16);
     e.position.set(0, EY, EZ);
     ghostGroup.add(e);
     ghostParts.eyes.push(e);
+  } else if (dna.eyeStyle === 'wide') {
+    // 超宽间距大眼
+    [-sep * 1.6, sep * 1.6].forEach(x => {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(dna.eyeSize * 1.2, 10, 8), eyeMat);
+      e.scale.set(1, 1.3, 0.16);
+      e.position.set(x * dna.bodyWide, EY, EZ);
+      ghostGroup.add(e);
+      ghostParts.eyes.push(e);
+    });
   }
 
   // ── 装饰（每局固定，Lv1起就有）
@@ -1769,6 +1787,28 @@ function buildGhost(level = 1) {
       }
     });
   }
+  } else if (dna.decor === 'antenna') {
+    // 触角：细杆 + 发光小球
+    const antMat = new THREE.MeshLambertMaterial({ color: pal.emissive, emissive: pal.emissive, emissiveIntensity: 1.2 });
+    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.34, 5), accentMat);
+    stick.position.set(0.06 * dna.bodyWide, 0.58 * dna.bodyTall + 0.17, 0);
+    stick.rotation.z = 0.18;
+    ghostGroup.add(stick);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.056, 8, 6), antMat);
+    ball.position.set(0.10 * dna.bodyWide, 0.58 * dna.bodyTall + 0.36, 0);
+    ghostGroup.add(ball);
+  } else if (dna.decor === 'crown') {
+    // 小皇冠：底环 + 三个尖
+    const crownMat = new THREE.MeshLambertMaterial({ color: 0xffd040, emissive: 0xffaa00, emissiveIntensity: 0.6 });
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * dna.bodyWide, 0.18 * dna.bodyWide, 0.06, 8), crownMat);
+    base.position.set(0, 0.58 * dna.bodyTall, 0);
+    ghostGroup.add(base);
+    [-0.12, 0, 0.12].forEach((ox, i) => {
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.036, i === 1 ? 0.18 : 0.13, 4), crownMat);
+      tip.position.set(ox * dna.bodyWide, 0.58 * dna.bodyTall + (i === 1 ? 0.12 : 0.09), 0);
+      ghostGroup.add(tip);
+    });
+  }
   // 'none' → 无装饰
 
   // ── 手臂（随机形状）
@@ -1776,12 +1816,15 @@ function buildGhost(level = 1) {
     [-1, 1].forEach(side => {
       let arm;
       if (dna.armStyle === 'pointed') {
-        // 尖角细长手
         arm = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.32, 5), bodyMat);
         arm.rotation.z = side * (Math.PI / 2 + 0.35);
         arm.position.set(side * 0.48 * dna.bodyWide, 0.10, 0.04);
+      } else if (dna.armStyle === 'stubby') {
+        // 短胖小手
+        arm = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), bodyMat);
+        arm.scale.set(1.1, 0.70, 0.80);
+        arm.position.set(side * 0.50 * dna.bodyWide, 0.02, 0.04);
       } else {
-        // 圆润小手
         arm = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), bodyMat);
         arm.scale.set(0.65, 0.90, 0.70);
         arm.position.set(side * 0.52 * dna.bodyWide, 0.06, 0.04);
@@ -2644,6 +2687,7 @@ function checkWish(actionType) {
   }
 }
 function updateWish(dt) {
+  if (_introActive) return;
   if (wishState) {
     wishState.ttl -= dt;
     wishEl.style.opacity = wishState.ttl<6 ? String(Math.max(0,wishState.ttl/6)) : '1';
