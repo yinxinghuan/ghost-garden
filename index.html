@@ -202,14 +202,14 @@
     #day-announce {
       position: fixed; left: 50%; top: 46%;
       transform: translateX(-50%);
-      font-size: 15px; letter-spacing: 6px; font-weight: 300;
+      font-size: 20px; letter-spacing: 6px; font-weight: 300;
       color: rgba(255,245,200,0.95);
       text-shadow: 0 0 20px rgba(255,200,80,1), 0 0 40px rgba(255,100,20,0.5);
       pointer-events: none; z-index: 93;
       opacity: 0; white-space: nowrap;
     }
     #day-announce.en {
-      font-size: 22px;
+      font-size: 26px;
     }
     #day-announce.show { animation: gg-announce 6s ease-in-out forwards; }
     @keyframes gg-announce {
@@ -2737,6 +2737,7 @@ const gs = {
   cd: { pet:0, feed:0, play:0, rest:0 },
   bounceT: 1.5, playing: false, resting: false, expression: 'happy',
   dangerTimer: 0, dead: false,
+  warnedLow: { mood: false, hunger: false, energy: false },
 };
 
 // ── 场景日夜切换（Three.js 灯光 + 背景）
@@ -2838,6 +2839,17 @@ function updateStats(dt) {
     gs.dangerTimer = 0;
   }
 
+  // 低值警告（每次跌破20时提示一次，回升到30以上才重置）
+  const statKeys = { mood: t('statMood'), hunger: t('statHunger'), energy: t('statEnergy') };
+  Object.entries(statKeys).forEach(([k, label]) => {
+    if (gs[k] <= 20 && !gs.warnedLow[k]) {
+      gs.warnedLow[k] = true;
+      showPopup(t('dangerWarn', { stat: label }), '#ff5555', 2.5);
+    } else if (gs[k] > 30) {
+      gs.warnedLow[k] = false;
+    }
+  });
+
   const avg = (gs.mood+gs.hunger+gs.energy)/3;
   const expr = avg<28?'sad':avg>62?'happy':'neutral';
   if (expr!==gs.expression) { gs.expression=expr; applyGhostExpression(expr); }
@@ -2906,6 +2918,7 @@ function restartGame() {
   gs.cd.pet=0; gs.cd.feed=0; gs.cd.play=0; gs.cd.rest=0;
   gs.bounceT=1.5; gs.playing=false; gs.resting=false; gs.expression='happy';
   gs.dangerTimer=0; gs.dead=false;
+  gs.warnedLow = { mood: false, hunger: false, energy: false };
   // UI
   document.getElementById('fire-count').textContent = gs.fire;
   document.getElementById('day-fill').style.width   = '100%';
