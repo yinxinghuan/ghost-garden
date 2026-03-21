@@ -3081,16 +3081,29 @@ function restartGame() {
   ['mood','hunger','energy'].forEach(k => document.getElementById('b-'+k).classList.remove('danger'));
   applyScenePhase('night');
   updateSubDisplay();
-  // 清除敌人和施工
+  // 清除随机事件、敌人、施工
+  eventObjects.forEach(e=>scene.remove(e.mesh)); eventObjects.length=0;
   enemyObjects.forEach(e=>scene.remove(e.mesh)); enemyObjects.length=0;
   enemySpawnIn=35+Math.random()*20;
+  eventSpawnIn=8+Math.random()*5;
   constructionList.forEach(m=>scene.remove(m)); constructionList.length=0;
   // 重置蜡烛
   candleSlots.forEach(s => { if (!s.lit) relightCandle(s); });
-  // 重建幽灵
+  // 重建幽灵（新随机造型）
   genGhostDNA();
   buildGhost(1);
-  // 开场过场（首次）
+  // 重建场地
+  rebuildDomain();
+  // 重置过场标记，清理 intro 页面状态，重新播放
+  _introShown = false;
+  _introActive = false;
+  document.querySelectorAll('.intro-page').forEach(p => {
+    p.classList.remove('active');
+    p.innerHTML = '';
+  });
+  const introEl = document.getElementById('intro');
+  introEl.classList.remove('done');
+  introEl.style.display = 'none';
   showIntroOnce();
 }
 
