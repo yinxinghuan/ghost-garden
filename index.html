@@ -1650,7 +1650,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 18,
-    reward() { gs.mood = Math.min(100,gs.mood+18); addFire(3); showPopup(t('popLostGhost'),'#c0a0ff'); },
+    reward() { gs.mood = Math.min(100,gs.mood+8); addFire(3); showPopup(t('popLostGhost'),'#c0a0ff'); },
   },
   {
     type: 'mushroom',
@@ -1756,7 +1756,7 @@ const EVENT_DEFS = [
       return g;
     },
     ttl: 18,
-    reward() { gs.mood=Math.min(100,gs.mood+25); showPopup(t('popButterfly'),'#ffb0f0'); },
+    reward() { gs.mood=Math.min(100,gs.mood+12); showPopup(t('popButterfly'),'#ffb0f0'); },
   },
 ];
 
@@ -1963,7 +1963,7 @@ function triggerDawnTransition() {
   }, 6000);
 }
 
-const DECAY = { mood:36, hunger:56, energy:20 };
+const DECAY = { mood:50, hunger:56, energy:20 };
 const fireEl = document.getElementById('fire-count');
 
 function addFire(n) { gs.fire = Math.min(30, gs.fire+n); fireEl.textContent = gs.fire; }
