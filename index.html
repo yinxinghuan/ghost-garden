@@ -896,6 +896,7 @@ const snd = (() => {
                         [800,1600,0.12,'square',0.12],[1000,2000,0.2,'sine',0.15]], 0.1),
     dayEnd:  () => play(220, 110, 0.6, 'sine', 0.08),
     warn:    () => seq([[320, 200, 0.18, 'sine', 0.16], [260, 160, 0.22, 'sine', 0.13]], 0.16),
+    reroll:  () => seq([[440, 660, 0.07, 'sine', 0.10], [660, 880, 0.07, 'sine', 0.10], [880, 1320, 0.10, 'sine', 0.12]], 0.07),
   };
 })();
 
@@ -3259,6 +3260,7 @@ function showIntroOnce() {
   rerollBtn.style.display = 'none';
   rerollBtn.addEventListener('pointerdown', e => {
     e.stopPropagation();
+    snd.reroll();
     genGhostDNA(); buildGhost(1);
   });
 
