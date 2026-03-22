@@ -3176,7 +3176,15 @@ function showEndingScreen() {
   overlay.classList.add('show');
 
   document.getElementById('ending-continue').onclick = () => {
-    location.reload();
+    overlay.classList.remove('show');
+    gs.dead = false;
+    gs.inDayScene = false;
+    _ghostFade.active = false;
+    if (ghostGroup) {
+      ghostGroup.visible = true;
+      ghostGroup.scale.setScalar(gs.lvScale);
+      if (ghostParts.mats) ghostParts.mats.forEach(m => { m.opacity = 1; });
+    }
   };
 }
 
