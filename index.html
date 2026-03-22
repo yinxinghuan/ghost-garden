@@ -587,9 +587,7 @@
     <p class="intro-ghost-lbl" id="intro-ghost-lbl"></p>
     <button id="intro-reroll"></button>
   </div>
-  <div class="intro-page" id="intro-p3">
-    <button id="intro-start"></button>
-  </div>
+  <div class="intro-page" id="intro-p3"></div>
   <div id="intro-progress">
     <div class="intro-dot on"></div>
     <div class="intro-dot"></div>
@@ -3254,11 +3252,12 @@ function showIntroOnce() {
     pg.innerHTML = lines.map((l, li) =>
       `<p class="${li === lines.length-1 && i===1 ? 'intro-sub' : 'intro-text'}">${l}</p>`
     ).join('');
-    // 第4页最后两行也是正文，第一行普通，后两行用 intro-sub
+    // 第4页最后两行也是正文，第一行普通，后两行用 intro-sub；末尾插入开始按钮
     if (i === 3) {
       pg.innerHTML = lines.map((l, li) =>
         `<p class="${li === 0 ? 'intro-text' : 'intro-sub'}">${l}</p>`
       ).join('');
+      pg.insertAdjacentHTML('beforeend', `<button id="intro-start">${t('introStart')}</button>`);
     }
   });
   // 出生页两行引子
@@ -3279,7 +3278,6 @@ function showIntroOnce() {
   });
 
   const startBtn = document.getElementById('intro-start');
-  startBtn.textContent = t('introStart');
   startBtn.style.display = 'none';
   startBtn.addEventListener('pointerdown', e => {
     e.stopPropagation();
