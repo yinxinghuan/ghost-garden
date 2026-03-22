@@ -470,6 +470,10 @@
       box-shadow: 0 0 18px rgba(140,80,255,0.35);
     }
     #intro-start:active { background: rgba(160,100,255,0.45); transform: translateX(-50%) scale(0.94); }
+    #intro-lb-btn {
+      position: absolute; bottom: 64px; left: 50%; transform: translateX(-50%);
+      display: none;
+    }
     #intro-skip {
       position: absolute; bottom: 28px; right: 24px;
       background: transparent; border: 1px solid rgba(180,150,255,0.25);
@@ -579,6 +583,128 @@
 })();
 </script>
 
+<!-- ══ LEADERBOARD STYLES ══ -->
+<style>
+  /* backdrop */
+  #lb-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  #lb-overlay.show { opacity: 1; pointer-events: all; }
+
+  /* panel */
+  #lb-panel {
+    width: 100%; max-width: 360px; max-height: 82vh;
+    display: flex; flex-direction: column;
+    border-radius: 24px;
+    background: linear-gradient(160deg, rgba(28,28,40,0.98) 0%, rgba(18,18,28,0.98) 100%);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+    overflow: hidden;
+    animation: lb-enter 0.35s cubic-bezier(0.34,1.4,0.64,1) both;
+    font-family: 'EB Garamond','Noto Serif SC',serif;
+  }
+  #lb-overlay:not(.show) #lb-panel { animation: none; }
+
+  /* header */
+  .lb-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+  .lb-hdr-left { display: flex; align-items: center; gap: 12px; }
+  .lb-hdr-icon { font-size: 28px; filter: drop-shadow(0 2px 8px rgba(255,215,0,0.5)); }
+  .lb-hdr-title { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: 0.5px; line-height: 1.2; }
+  .lb-hdr-game { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .lb-close {
+    width: 32px; height: 32px; border-radius: 50%; border: none;
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5);
+    font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .lb-close:active { background: rgba(255,255,255,0.18); transform: scale(0.9); }
+
+  /* tabs */
+  .lb-tabs {
+    display: flex; gap: 6px; padding: 12px 16px 0; flex-shrink: 0;
+  }
+  .lb-tab {
+    flex: 1; padding: 9px 8px; border: none; border-radius: 12px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.45);
+    font-family: inherit; letter-spacing: 0.3px;
+    -webkit-tap-highlight-color: transparent; transition: background 0.2s, color 0.2s;
+  }
+  .lb-tab.active {
+    background: linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,180,0,0.12));
+    color: #FFD700; border: 1px solid rgba(255,215,0,0.25);
+  }
+
+  /* body */
+  .lb-body { flex: 1; overflow-y: auto; padding: 10px 12px 16px; -webkit-overflow-scrolling: touch; }
+  .lb-body::-webkit-scrollbar { display: none; }
+  .lb-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 40px 20px;
+  }
+  .lb-state-icon { font-size: 36px; }
+  .lb-state-text { font-size: 14px; color: rgba(255,255,255,0.35); text-align: center; line-height: 1.5; }
+  .lb-spinner {
+    display: block; width: 28px; height: 28px; border-radius: 50%;
+    border: 3px solid rgba(255,215,0,0.15); border-top-color: #FFD700;
+    animation: lb-spin 0.8s linear infinite;
+  }
+
+  /* rows */
+  .lb-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 14px; margin-bottom: 4px;
+    background: rgba(255,255,255,0.04);
+  }
+  .lb-row.top { background: rgba(255,215,0,0.05); border: 1px solid rgba(255,255,255,0.06); }
+  .lb-row.me  { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.2); }
+  .lb-rank { width: 30px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .lb-medal { font-size: 20px; line-height: 1; }
+  .lb-num { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.3); font-variant-numeric: tabular-nums; }
+  .lb-avatar {
+    border-radius: 50%; overflow: hidden; flex-shrink: 0;
+    background: linear-gradient(135deg,#2a2a3e,#1a1a2e);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: rgba(255,215,0,0.8);
+    border: 1.5px solid rgba(255,255,255,0.1);
+  }
+  .lb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .lb-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; }
+  .lb-name { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.9); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb-me-tag { font-size: 11px; font-weight: 600; color: #FFD700; background: rgba(255,215,0,0.12); border-radius: 6px; padding: 1px 6px; flex-shrink: 0; }
+  .lb-score { font-size: 16px; font-weight: 700; color: #FFD700; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+  /* lb icon btn reused across overlays */
+  .gg-lb-icon {
+    display: block; margin: 10px auto 0;
+    width: 36px; height: 36px; border-radius: 50%; border: none;
+    background: rgba(255,255,255,0.1); font-size: 18px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, transform 0.08s;
+  }
+  .gg-lb-icon:active { background: rgba(255,255,255,0.22); transform: scale(0.9); }
+
+  @keyframes lb-enter {
+    from { opacity: 0; transform: translateY(24px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes lb-spin { to { transform: rotate(360deg); } }
+</style>
+
 <!-- INTRO CINEMATIC -->
 <div id="intro" style="display:none">
   <div class="intro-page" id="intro-p0"></div>
@@ -631,6 +757,7 @@
     <div id="dead-best"></div>
     <div id="dead-new"></div>
     <button id="dead-retry"></button>
+    <button class="gg-lb-icon" id="dead-lb-btn">🏆</button>
   </div>
 </div>
 
@@ -641,6 +768,30 @@
     <div id="ending-body"></div>
     <div id="ending-footer"></div>
     <button id="ending-continue"></button>
+    <button class="gg-lb-icon" id="ending-lb-btn">🏆</button>
+  </div>
+</div>
+
+<!-- LEADERBOARD OVERLAY -->
+<div id="lb-overlay">
+  <div id="lb-panel">
+    <div class="lb-hdr">
+      <div class="lb-hdr-left">
+        <span class="lb-hdr-icon">🏆</span>
+        <div>
+          <div class="lb-hdr-title" id="lb-title-text">排行榜</div>
+          <div class="lb-hdr-game">幽灵庄园</div>
+        </div>
+      </div>
+      <button class="lb-close" id="lb-close-btn">✕</button>
+    </div>
+    <div class="lb-tabs" id="lb-tabs" style="display:none">
+      <button class="lb-tab active" id="lb-tab-global">🌍 全局榜</button>
+      <button class="lb-tab" id="lb-tab-friends">👥 好友榜</button>
+    </div>
+    <div class="lb-body" id="lb-body">
+      <div class="lb-state"><span class="lb-spinner"></span></div>
+    </div>
   </div>
 </div>
 
@@ -3153,6 +3304,9 @@ function showDeadScreen() {
   document.getElementById('dead-new').textContent   = isNew ? t('deadNew') : '';
   document.getElementById('dead-retry').textContent = t('deadRetry');
   document.getElementById('dead-overlay').classList.add('show');
+  // 提交排行榜分数
+  const score = gs.totalFire + gs.day * 10;
+  if (window.GG_LB) window.GG_LB.submitScore(score);
 }
 
 function triggerEnding() {
@@ -3171,6 +3325,9 @@ function showEndingScreen() {
   document.getElementById('ending-body').innerHTML = bodyLines.join('<br>');
   document.getElementById('ending-footer').innerHTML = footerLines.join('<br>');
   document.getElementById('ending-continue').textContent = t('endingContinue');
+  // 提交排行榜分数
+  const score = gs.totalFire + gs.day * 10;
+  if (window.GG_LB) window.GG_LB.submitScore(score);
 
   const overlay = document.getElementById('ending-overlay');
   overlay.classList.add('show');
@@ -3265,7 +3422,7 @@ function showIntroOnce() {
       pg.innerHTML = lines.map((l, li) =>
         `<p class="${li === 0 ? 'intro-text' : 'intro-sub'}">${l}</p>`
       ).join('');
-      pg.insertAdjacentHTML('beforeend', `<button id="intro-start">${t('introStart')}</button>`);
+      pg.insertAdjacentHTML('beforeend', `<button id="intro-start">${t('introStart')}</button><button class="gg-lb-icon" id="intro-lb-btn">🏆</button>`);
     }
   });
   // 出生页两行引子
@@ -3364,6 +3521,8 @@ function showIntroOnce() {
     if (pageIdx === 2) { enterBirthScene(); rerollBtn.style.display = 'block'; }
     else { rerollBtn.style.display = 'none'; }
     startBtn.style.display = (pageIdx === pages.length - 1) ? 'block' : 'none';
+    const lbBtn = document.getElementById('intro-lb-btn');
+    if (lbBtn) lbBtn.style.display = (pageIdx === pages.length - 1) ? 'block' : 'none';
   }
 
   function advance() {
@@ -3860,6 +4019,163 @@ helpOverlay.addEventListener('pointerdown', e => {
 setTimeout(() => { document.getElementById('hint').style.opacity='0'; }, 5000);
 
 requestAnimationFrame(ts => { lastTs=ts; requestAnimationFrame(animate); });
+
+// ── Leaderboard Module ────────────────────────────────────────────────────
+(function () {
+  const GAMES_API = 'https://games-api.xinghuan-yin.workers.dev';
+  const GAME_ID   = 'ghost-garden';
+
+  function toB64(s)   { return btoa(unescape(encodeURIComponent(s))); }
+  function fromB64(s) { return decodeURIComponent(escape(atob(s))); }
+
+  const params     = new URLSearchParams(window.location.search);
+  const telegramId = params.get('telegram_id') || null;
+  const rawOrigin  = params.get('api_origin');
+  const apiOrigin  = rawOrigin ? decodeURIComponent(rawOrigin) : null;
+  const isInAigram = !!(telegramId && apiOrigin);
+
+  let currentUser = null;
+
+  function callAigramAPI(url) {
+    return new Promise((resolve, reject) => {
+      const id = crypto.randomUUID();
+      let timer;
+      const handler = e => {
+        if (e.origin !== apiOrigin) return;
+        const msg = typeof e.data === 'string' ? e.data : '';
+        if (!msg.startsWith('callAPIResult-')) return;
+        try {
+          const r = JSON.parse(fromB64(msg.slice('callAPIResult-'.length)));
+          if (r.request_id !== id) return;
+          window.removeEventListener('message', handler);
+          clearTimeout(timer);
+          if (r.success) resolve(r.data); else reject(new Error(r.error || 'API error'));
+        } catch {}
+      };
+      window.addEventListener('message', handler);
+      window.parent.postMessage(
+        'callAPI-' + toB64(JSON.stringify({ url, method: 'GET', data: null, request_id: id, emitter: window.location.origin })),
+        apiOrigin
+      );
+      timer = setTimeout(() => { window.removeEventListener('message', handler); reject(new Error('timeout')); }, 10000);
+    });
+  }
+
+  if (isInAigram) {
+    callAigramAPI(`/note/telegram/user/get/info/by/telegram_id?telegram_id=${telegramId}`)
+      .then(r => { currentUser = r.data; }).catch(() => {});
+  }
+
+  function submitScore(score) {
+    if (!telegramId || score <= 0) return;
+    fetch(`${GAMES_API}/score`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        game_id: GAME_ID, telegram_id: telegramId,
+        name: (currentUser && currentUser.name) || telegramId,
+        avatar_url: (currentUser && currentUser.head_url) || '',
+        score,
+      }),
+    }).catch(() => {});
+  }
+
+  async function fetchGlobal() {
+    const res = await fetch(`${GAMES_API}/leaderboard?game_id=${GAME_ID}&limit=50`);
+    const json = await res.json();
+    return (json.leaderboard || []).map(e => Object.assign({}, e, { isMe: e.telegram_id === telegramId }));
+  }
+
+  async function fetchFriends() {
+    if (!isInAigram) return [];
+    try {
+      const contacts = await callAigramAPI(`/note/telegram/user/contact/list?telegram_id=${telegramId}`);
+      const ids = [telegramId, ...contacts.data.map(f => f.telegram_id)].join(',');
+      const res = await fetch(`${GAMES_API}/leaderboard?game_id=${GAME_ID}&telegram_ids=${encodeURIComponent(ids)}`);
+      const json = await res.json();
+      return (json.leaderboard || []).map(e => Object.assign({}, e, { isMe: e.telegram_id === telegramId }));
+    } catch { return []; }
+  }
+
+  window.GG_LB = { submitScore, isInAigram, telegramId };
+
+  // ── Leaderboard UI ────────────────────────────────────────────────────────
+  const MEDALS = ['🥇','🥈','🥉'];
+  const overlay = document.getElementById('lb-overlay');
+  const body    = document.getElementById('lb-body');
+  const tabs    = document.getElementById('lb-tabs');
+  const tabGlobal  = document.getElementById('lb-tab-global');
+  const tabFriends = document.getElementById('lb-tab-friends');
+  const titleEl    = document.getElementById('lb-title-text');
+
+  const isZh = !localStorage.getItem('game_locale') && navigator.language.toLowerCase().startsWith('zh')
+             || localStorage.getItem('game_locale') === 'zh';
+  const STR = isZh
+    ? { title:'排行榜', global:'🌍 全局榜', friends:'👥 好友榜', me:'我', empty:'暂无记录，快来第一个上榜！', emptyFriends:'好友还未上榜' }
+    : { title:'Leaderboard', global:'🌍 Global', friends:'👥 Friends', me:'me', empty:'No records yet. Be the first!', emptyFriends:'No friends on the board yet.' };
+
+  titleEl.textContent  = STR.title;
+  tabGlobal.textContent  = STR.global;
+  tabFriends.textContent = STR.friends;
+
+  if (isInAigram) tabs.style.display = 'flex';
+
+  let currentTab = 'global';
+
+  function openLB() { overlay.classList.add('show'); loadTab(currentTab); }
+  function closeLB() { overlay.classList.remove('show'); }
+
+  function avatarHTML(url, name, size) {
+    const s = size || 38;
+    if (url) return `<div class="lb-avatar" style="width:${s}px;height:${s}px"><img src="${url}" alt="${name}"></div>`;
+    return `<div class="lb-avatar" style="width:${s}px;height:${s}px;font-size:${Math.round(s*0.38)}px">${name.charAt(0).toUpperCase()}</div>`;
+  }
+
+  async function loadTab(tab) {
+    body.innerHTML = '<div class="lb-state"><span class="lb-spinner"></span></div>';
+    tabGlobal.classList.toggle('active', tab === 'global');
+    tabFriends.classList.toggle('active', tab === 'friends');
+    try {
+      const entries = tab === 'global' ? await fetchGlobal() : await fetchFriends();
+      if (entries.length === 0) {
+        body.innerHTML = `<div class="lb-state"><span class="lb-state-icon">🎮</span><span class="lb-state-text">${tab === 'friends' ? STR.emptyFriends : STR.empty}</span></div>`;
+        return;
+      }
+      body.innerHTML = entries.map((e, i) => {
+        const isTop = i < 3;
+        const rank = isTop ? `<span class="lb-medal">${MEDALS[i]}</span>` : `<span class="lb-num">${i+1}</span>`;
+        const av = avatarHTML(e.avatar_url, e.name, isTop ? 44 : 38);
+        const meTag = e.isMe ? `<span class="lb-me-tag">${STR.me}</span>` : '';
+        return `<div class="lb-row${isTop?' top':''}${e.isMe?' me':''}">
+          <div class="lb-rank">${rank}</div>
+          ${av}
+          <div class="lb-info"><span class="lb-name">${e.name}</span>${meTag}</div>
+          <span class="lb-score">${e.score.toLocaleString()}</span>
+        </div>`;
+      }).join('');
+    } catch {
+      body.innerHTML = `<div class="lb-state"><span class="lb-state-text">加载失败</span></div>`;
+    }
+  }
+
+  tabGlobal.addEventListener('pointerdown', () => { currentTab='global'; loadTab('global'); });
+  tabFriends.addEventListener('pointerdown', () => { currentTab='friends'; loadTab('friends'); });
+  document.getElementById('lb-close-btn').addEventListener('pointerdown', closeLB);
+  overlay.addEventListener('pointerdown', e => { if (e.target === overlay) closeLB(); });
+
+  // wire up all 🏆 buttons
+  function wireLB(id) {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('pointerdown', e => { e.stopPropagation(); openLB(); });
+  }
+  wireLB('dead-lb-btn');
+  wireLB('ending-lb-btn');
+  // intro btn is injected dynamically — poll until ready
+  const introInterval = setInterval(() => {
+    const btn = document.getElementById('intro-lb-btn');
+    if (btn) { clearInterval(introInterval); wireLB('intro-lb-btn'); }
+  }, 200);
+})();
 </script>
 </body>
 </html>
