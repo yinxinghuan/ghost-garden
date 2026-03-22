@@ -3824,7 +3824,7 @@ document.getElementById('help-close').textContent  = t('helpClose');
 updateSubDisplay();
 
 // ── 死亡重启
-document.getElementById('dead-retry').addEventListener('pointerdown', restartGame);
+document.getElementById('dead-retry').addEventListener('pointerdown', () => location.reload());
 
 // ── 音乐开关
 const musicBtn = document.getElementById('music-btn');
