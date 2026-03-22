@@ -459,6 +459,17 @@
       transition: background .15s, transform .08s;
     }
     #intro-reroll:active { background: rgba(160,120,255,0.2); transform: translateX(-50%) scale(0.94); }
+    #intro-start {
+      position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%);
+      background: rgba(120,70,255,0.28); border: 1px solid rgba(180,140,255,0.6);
+      color: rgba(230,210,255,0.95); font-family: inherit;
+      font-size: 16px; letter-spacing: 3px; padding: 12px 32px;
+      border-radius: 40px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .15s, transform .08s;
+      box-shadow: 0 0 18px rgba(140,80,255,0.35);
+    }
+    #intro-start:active { background: rgba(160,100,255,0.45); transform: translateX(-50%) scale(0.94); }
     #intro-skip {
       position: absolute; bottom: 28px; right: 24px;
       background: transparent; border: 1px solid rgba(180,150,255,0.25);
@@ -576,7 +587,9 @@
     <p class="intro-ghost-lbl" id="intro-ghost-lbl"></p>
     <button id="intro-reroll"></button>
   </div>
-  <div class="intro-page" id="intro-p3"></div>
+  <div class="intro-page" id="intro-p3">
+    <button id="intro-start"></button>
+  </div>
   <div id="intro-progress">
     <div class="intro-dot on"></div>
     <div class="intro-dot"></div>
@@ -708,7 +721,7 @@ window._ggStartTs = Date.now();
         ['守护这座墓园，', '在十三天内长成完全体，', '便能与命运抗争到底。'],
       ],
       introBirth: '小幽 诞生了。',
-      introTap: '轻触翻页', introSkip: '跳过', introReroll: '换一个',
+      introTap: '轻触翻页', introSkip: '跳过', introReroll: '换一个', introStart: '开始守护',
       evolve:'进化！{n}降临，守护之力增强',
       degrade:'灵火耗尽！幽灵退化为{n}……',
       popRestBusy:'休息中，无法捡拾',
@@ -794,7 +807,7 @@ window._ggStartTs = Date.now();
         ['Protect this cemetery.', 'Grow to your full power', 'within thirteen days.'],
       ],
       introBirth: '"Boo" is born.',
-      introTap: 'tap to continue', introSkip: 'Skip', introReroll: 'Reroll',
+      introTap: 'tap to continue', introSkip: 'Skip', introReroll: 'Reroll', introStart: 'Start Guarding',
       evolve:'Evolution! {n} arrived — protection grows',
       degrade:'Flame too low! Reverted to {n}…',
       popRestBusy:'Resting, cannot collect',
@@ -3265,6 +3278,14 @@ function showIntroOnce() {
     genGhostDNA(); buildGhost(1);
   });
 
+  const startBtn = document.getElementById('intro-start');
+  startBtn.textContent = t('introStart');
+  startBtn.style.display = 'none';
+  startBtn.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    dismiss();
+  });
+
   // 隐藏游戏 UI，避免透明时显示干扰
   const gameEls = ['hud','stats','actions','hint'].map(id => document.getElementById(id));
   gameEls.forEach(e => { if(e) e.style.visibility='hidden'; });
@@ -3336,6 +3357,7 @@ function showIntroOnce() {
 
     if (pageIdx === 2) { enterBirthScene(); rerollBtn.style.display = 'block'; }
     else { rerollBtn.style.display = 'none'; }
+    startBtn.style.display = (pageIdx === pages.length - 1) ? 'block' : 'none';
   }
 
   function advance() {
@@ -3357,6 +3379,7 @@ function showIntroOnce() {
   el.addEventListener('pointerdown', e => {
     if (e.target === skipBtn || skipBtn.contains(e.target)) return;
     if (e.target === rerollBtn || rerollBtn.contains(e.target)) return;
+    if (e.target === startBtn || startBtn.contains(e.target)) return;
     advance();
   });
   skipBtn.addEventListener('pointerdown', e => { e.stopPropagation(); dismiss(); });
