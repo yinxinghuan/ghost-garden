@@ -3165,10 +3165,7 @@ function showEndingScreen() {
   overlay.classList.add('show');
 
   document.getElementById('ending-continue').onclick = () => {
-    overlay.classList.remove('show');
-    gs.dead = false;
-    gs.inDayScene = false;
-    if (ghostGroup) ghostGroup.visible = true;
+    location.reload();
   };
 }
 
