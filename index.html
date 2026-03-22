@@ -3019,7 +3019,7 @@ const DECAY = { mood:75, hunger:85, energy:35 };
 const fireEl = document.getElementById('fire-count');
 
 function addFire(n) {
-  gs.fire = Math.min(30, gs.fire+n);
+  gs.fire = Math.min(99, gs.fire+n);
   gs.totalFire += n;
   fireEl.textContent = gs.fire;
   checkLevel();
