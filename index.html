@@ -4033,20 +4033,6 @@ buildGate();
 buildAllCandles(0);
 genGhostDNA();
 buildGhost(1);
-// Check for saved game — show resume dialog or run normal intro
-(function () {
-  const saved = loadSave();
-  if (saved) {
-    // Hide game UI until user decides
-    ['hud','stats','actions','hint'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.visibility = 'hidden';
-    });
-    showResumeDialog(saved);
-  } else {
-    showIntroOnce();
-  }
-})();
 
 // ── i18n 初始化
 document.getElementById('page-title').textContent  = t('title');
@@ -4185,6 +4171,27 @@ function showResumeDialog(data) {
     showIntroOnce();
   }, { once: true });
 }
+
+// ── Init: check for saved game — show resume dialog or normal intro ───────────
+(function () {
+  const saved = loadSave();
+  if (saved) {
+    ['hud','stats','actions','hint'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.visibility = 'hidden';
+    });
+    showResumeDialog(saved);
+  } else {
+    showIntroOnce();
+  }
+})();
+
+// ── Reliable save on mobile app-switch / tab close ───────────────────────────
+(function () {
+  function saveOnHide() { saveGame(); }
+  window.addEventListener('visibilitychange', saveOnHide);
+  window.addEventListener('pagehide', saveOnHide);
+})();
 
 // ── Leaderboard Module ────────────────────────────────────────────────────
 (function () {
