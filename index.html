@@ -726,6 +726,8 @@
   }
   .lb-row.top { background: rgba(255,215,0,0.05); border: 1px solid rgba(255,255,255,0.06); }
   .lb-row.me  { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.2); }
+  .lb-row.clickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .lb-row.clickable:active { background: rgba(255,255,255,0.10); transform: scale(0.98); }
   .lb-rank { width: 30px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
   .lb-medal { font-size: 20px; line-height: 1; }
   .lb-num { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.3); font-variant-numeric: tabular-nums; }
@@ -4261,13 +4263,23 @@ function showResumeDialog(data) {
 
   async function fetchFriends() {
     if (!isInAigram) return [];
+    const friendIds = new Set([telegramId]);
     try {
       const contacts = await callAigramAPI(`/note/telegram/user/contact/list?telegram_id=${telegramId}`);
-      const ids = [telegramId, ...contacts.data.map(f => f.telegram_id)].join(',');
+      const list = Array.isArray(contacts) ? contacts : (contacts && contacts.data ? contacts.data : []);
+      list.forEach(f => { if (f.telegram_id) friendIds.add(String(f.telegram_id)); });
+    } catch { /* contacts failed — still query with current user */ }
+    try {
+      const ids = [...friendIds].join(',');
       const res = await fetch(`${GAMES_API}/leaderboard?game_id=${GAME_ID}&telegram_ids=${encodeURIComponent(ids)}`);
       const json = await res.json();
       return (json.leaderboard || []).map(e => Object.assign({}, e, { isMe: e.telegram_id === telegramId }));
     } catch { return []; }
+  }
+
+  function openProfile(tid) {
+    if (!apiOrigin || !tid) return;
+    try { window.parent.postMessage('AW.PROFILE.OPEN-' + btoa(JSON.stringify({ id: tid })), apiOrigin); } catch {}
   }
 
   window.GG_LB = { submitScore, isInAigram, telegramId };
@@ -4319,13 +4331,19 @@ function showResumeDialog(data) {
         const rank = isTop ? `<span class="lb-medal">${MEDALS[i]}</span>` : `<span class="lb-num">${i+1}</span>`;
         const av = avatarHTML(e.avatar_url, e.name, isTop ? 44 : 38);
         const meTag = e.isMe ? `<span class="lb-me-tag">${STR.me}</span>` : '';
-        return `<div class="lb-row${isTop?' top':''}${e.isMe?' me':''}">
+        const clickable = isInAigram ? ' clickable' : '';
+        return `<div class="lb-row${isTop?' top':''}${e.isMe?' me':''}${clickable}" data-tid="${e.telegram_id}">
           <div class="lb-rank">${rank}</div>
           ${av}
           <div class="lb-info"><span class="lb-name">${e.name}</span>${meTag}</div>
           <span class="lb-score">${e.score.toLocaleString()}</span>
         </div>`;
       }).join('');
+      if (isInAigram) {
+        body.querySelectorAll('.lb-row.clickable').forEach(row => {
+          row.addEventListener('pointerdown', () => openProfile(row.dataset.tid));
+        });
+      }
     } catch {
       body.innerHTML = `<div class="lb-state"><span class="lb-state-text">加载失败</span></div>`;
     }
