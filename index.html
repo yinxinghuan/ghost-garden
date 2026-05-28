@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+    <meta name="game-uuid" content="54112bb3-9829-4ad1-a012-1c461c689058" />
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title id="page-title">幽灵庄园</title>
+  <script src="./aigram-bridge.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;500&display=swap" rel="stylesheet">
   <style>
@@ -843,10 +846,6 @@
         </div>
       </div>
       <button class="lb-close" id="lb-close-btn">✕</button>
-    </div>
-    <div class="lb-tabs" id="lb-tabs" style="display:none">
-      <button class="lb-tab active" id="lb-tab-global">🌍 全局榜</button>
-      <button class="lb-tab" id="lb-tab-friends">👥 好友榜</button>
     </div>
     <div class="lb-body" id="lb-body">
       <div class="lb-state"><span class="lb-spinner"></span></div>
@@ -4199,91 +4198,49 @@ function showResumeDialog(data) {
 })();
 
 // ── Leaderboard Module ────────────────────────────────────────────────────
+// Talks to Aigram platform via window.Aigram (see aigram-bridge.js).
 (function () {
-  const GAMES_API = 'https://games-api.xinghuan-yin.workers.dev';
   const GAME_ID   = 'ghost-garden';
 
-  function toB64(s)   { return btoa(unescape(encodeURIComponent(s))); }
-  function fromB64(s) { return decodeURIComponent(escape(atob(s))); }
-
-  const params     = new URLSearchParams(window.location.search);
-  const telegramId = params.get('telegram_id') || null;
-  const rawOrigin  = params.get('api_origin');
-  const apiOrigin  = rawOrigin ? decodeURIComponent(rawOrigin) : null;
-  const isInAigram = !!(telegramId && apiOrigin);
+  const A = window.Aigram;
+  const { telegramId, apiOrigin, isInAigram, gameUuid, callAigramAPI, openAigramProfile } = A;
 
   let currentUser = null;
 
-  function callAigramAPI(url) {
-    return new Promise((resolve, reject) => {
-      const id = crypto.randomUUID();
-      let timer;
-      const handler = e => {
-        if (e.origin !== apiOrigin) return;
-        const msg = typeof e.data === 'string' ? e.data : '';
-        if (!msg.startsWith('callAPIResult-')) return;
-        try {
-          const r = JSON.parse(fromB64(msg.slice('callAPIResult-'.length)));
-          if (r.request_id !== id) return;
-          window.removeEventListener('message', handler);
-          clearTimeout(timer);
-          if (r.success) resolve(r.data); else reject(new Error(r.error || 'API error'));
-        } catch {}
-      };
-      window.addEventListener('message', handler);
-      window.parent.postMessage(
-        'callAPI-' + toB64(JSON.stringify({ url, method: 'GET', data: null, request_id: id, emitter: window.location.origin })),
-        apiOrigin
-      );
-      timer = setTimeout(() => { window.removeEventListener('message', handler); reject(new Error('timeout')); }, 10000);
-    });
-  }
-
-  if (isInAigram) {
+  if (isInAigram && telegramId) {
     callAigramAPI(`/note/telegram/user/get/info/by/telegram_id?telegram_id=${telegramId}`)
-      .then(r => { currentUser = r.data; }).catch(() => {});
+      .then(r => { currentUser = r && r.data; }).catch(() => {});
   }
 
   function submitScore(score) {
-    if (!telegramId || score <= 0) return;
-    fetch(`${GAMES_API}/score`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        game_id: GAME_ID, telegram_id: telegramId,
-        name: (currentUser && currentUser.name) || telegramId,
-        avatar_url: (currentUser && currentUser.head_url) || '',
-        score,
-      }),
-    }).catch(() => {});
+    if (!A.canRank || score <= 0) return;
+    callAigramAPI(
+      '/note/aigram/ai/game/rank/score/save',
+      'POST',
+      { session_id: gameUuid, score }
+    ).catch(() => {});
   }
 
   async function fetchGlobal() {
-    const res = await fetch(`${GAMES_API}/leaderboard?game_id=${GAME_ID}&limit=50`);
-    const json = await res.json();
-    return (json.leaderboard || []).map(e => Object.assign({}, e, { isMe: e.telegram_id === telegramId }));
-  }
-
-  async function fetchFriends() {
-    if (!isInAigram) return [];
-    const friendIds = new Set([telegramId]);
+    if (!A.canRank) return [];
     try {
-      const contacts = await callAigramAPI(`/note/telegram/user/contact/list?telegram_id=${telegramId}`);
-      const list = Array.isArray(contacts) ? contacts : (contacts && contacts.data ? contacts.data : []);
-      list.forEach(f => { if (f.telegram_id) friendIds.add(String(f.telegram_id)); });
-    } catch { /* contacts failed — still query with current user */ }
-    try {
-      const ids = [...friendIds].join(',');
-      const res = await fetch(`${GAMES_API}/leaderboard?game_id=${GAME_ID}&telegram_ids=${encodeURIComponent(ids)}`);
-      const json = await res.json();
-      return (json.leaderboard || []).map(e => Object.assign({}, e, { isMe: e.telegram_id === telegramId }));
+      const r = await callAigramAPI(
+        `/note/aigram/ai/game/rank/score/list/by/session_id?session_id=${encodeURIComponent(gameUuid)}`
+      );
+      const rows = (r && Array.isArray(r.data)) ? r.data : (Array.isArray(r) ? r : []);
+      return rows.map(row => ({
+        telegram_id: String(row.user_id),
+        name: row.user_name,
+        avatar_url: row.head_url,
+        score: Number(row.score),
+        rank: row.rank,
+        isMe: String(row.user_id) === String(telegramId),
+      }));
     } catch { return []; }
   }
 
-  function openProfile(tid) {
-    if (!apiOrigin || !tid) return;
-    try { window.parent.postMessage('AW.PROFILE.OPEN-' + btoa(JSON.stringify({ id: tid })), apiOrigin); } catch {}
-  }
+  async function fetchFriends() { return []; }
+  function openProfile(tid) { openAigramProfile(tid); }
 
   window.GG_LB = { submitScore, isInAigram, telegramId };
 
@@ -4291,26 +4248,17 @@ function showResumeDialog(data) {
   const MEDALS = ['🥇','🥈','🥉'];
   const overlay = document.getElementById('lb-overlay');
   const body    = document.getElementById('lb-body');
-  const tabs    = document.getElementById('lb-tabs');
-  const tabGlobal  = document.getElementById('lb-tab-global');
-  const tabFriends = document.getElementById('lb-tab-friends');
-  const titleEl    = document.getElementById('lb-title-text');
+  const titleEl = document.getElementById('lb-title-text');
 
   const isZh = !localStorage.getItem('game_locale') && navigator.language.toLowerCase().startsWith('zh')
              || localStorage.getItem('game_locale') === 'zh';
   const STR = isZh
-    ? { title:'排行榜', global:'🌍 全局榜', friends:'👥 好友榜', me:'我', empty:'暂无记录，快来第一个上榜！', emptyFriends:'好友还未上榜' }
-    : { title:'Leaderboard', global:'🌍 Global', friends:'👥 Friends', me:'me', empty:'No records yet. Be the first!', emptyFriends:'No friends on the board yet.' };
+    ? { title:'排行榜', me:'我', empty:'暂无记录，快来第一个上榜！' }
+    : { title:'Leaderboard', me:'me', empty:'No records yet. Be the first!' };
 
-  titleEl.textContent  = STR.title;
-  tabGlobal.textContent  = STR.global;
-  tabFriends.textContent = STR.friends;
+  if (titleEl) titleEl.textContent = STR.title;
 
-  if (isInAigram) tabs.style.display = 'flex';
-
-  let currentTab = 'global';
-
-  function openLB() { overlay.classList.add('show'); loadTab(currentTab); }
+  function openLB() { overlay.classList.add('show'); loadTab(); }
   function closeLB() { overlay.classList.remove('show'); }
 
   function avatarHTML(url, name, size) {
@@ -4319,14 +4267,12 @@ function showResumeDialog(data) {
     return `<div class="lb-avatar" style="width:${s}px;height:${s}px;font-size:${Math.round(s*0.38)}px">${name.charAt(0).toUpperCase()}</div>`;
   }
 
-  async function loadTab(tab) {
+  async function loadTab() {
     body.innerHTML = '<div class="lb-state"><span class="lb-spinner"></span></div>';
-    tabGlobal.classList.toggle('active', tab === 'global');
-    tabFriends.classList.toggle('active', tab === 'friends');
     try {
-      const entries = tab === 'global' ? await fetchGlobal() : await fetchFriends();
+      const entries = await fetchGlobal();
       if (entries.length === 0) {
-        body.innerHTML = `<div class="lb-state"><span class="lb-state-icon">🎮</span><span class="lb-state-text">${tab === 'friends' ? STR.emptyFriends : STR.empty}</span></div>`;
+        body.innerHTML = `<div class="lb-state"><span class="lb-state-icon">🎮</span><span class="lb-state-text">${STR.empty}</span></div>`;
         return;
       }
       body.innerHTML = entries.map((e, i) => {
@@ -4352,8 +4298,6 @@ function showResumeDialog(data) {
     }
   }
 
-  tabGlobal.addEventListener('pointerdown', () => { currentTab='global'; loadTab('global'); });
-  tabFriends.addEventListener('pointerdown', () => { currentTab='friends'; loadTab('friends'); });
   document.getElementById('lb-close-btn').addEventListener('pointerdown', closeLB);
   overlay.addEventListener('pointerdown', e => { if (e.target === overlay) closeLB(); });
 
