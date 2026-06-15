@@ -3377,7 +3377,7 @@ function showDeadScreen() {
   eraseSave();
   // 提交排行榜分数
   const score = gs.totalFire + gs.day * 10;
-  if (window.GG_LB) window.GG_LB.submitScore(score);
+  if (window.GG_LB) { window.GG_LB.submitScore(score); window.GG_LB.notifyBeat && window.GG_LB.notifyBeat(score); }
 }
 
 function triggerEnding() {
@@ -3398,7 +3398,7 @@ function showEndingScreen() {
   document.getElementById('ending-continue').textContent = t('endingContinue');
   // 提交排行榜分数
   const score = gs.totalFire + gs.day * 10;
-  if (window.GG_LB) window.GG_LB.submitScore(score);
+  if (window.GG_LB) { window.GG_LB.submitScore(score); window.GG_LB.notifyBeat && window.GG_LB.notifyBeat(score); }
 
   const overlay = document.getElementById('ending-overlay');
   overlay.classList.add('show');
@@ -4221,6 +4221,54 @@ function showResumeDialog(data) {
     ).catch(() => {});
   }
 
+  // ── Leaderboard-beat 1:1 notify (score_beat) — see aigram-notify skill ──
+  // Page reload is the retry mechanism here, so a single page-load snapshot
+  // is the natural pre-run baseline. notifiedTargets dedupes within session.
+  let preRunBest = 0;
+  const notifiedTargets = new Set();
+  if (A.canRank && telegramId) {
+    callAigramAPI('/note/aigram/ai/game/rank/score/list/by/session_id?session_id=' + gameUuid, 'GET')
+      .then(res => {
+        const rows = Array.isArray(res) ? res : (res && res.data) || [];
+        const meId = String(telegramId);
+        const me = rows.find(r => String(r.user_id) === meId);
+        preRunBest = me ? Number(me.score) || 0 : 0;
+      }).catch(() => {});
+  }
+  async function notifyBeat(myScore) {
+    if (!A.canRank || !telegramId) return;
+    if (myScore <= preRunBest) return;
+    try {
+      const res = await callAigramAPI(
+        '/note/aigram/ai/game/rank/score/list/by/session_id?session_id=' + gameUuid, 'GET');
+      const rows = Array.isArray(res) ? res : (res && res.data) || [];
+      const meId = String(telegramId);
+      const beaten = rows
+        .filter(r => String(r.user_id) !== meId)
+        .map(r => ({ id: String(r.user_id), score: Number(r.score) || 0 }))
+        .filter(r => r.score < myScore && r.score > preRunBest && !notifiedTargets.has(r.id))
+        .sort((a, b) => b.score - a.score)[0];
+      if (!beaten) return;
+      notifiedTargets.add(beaten.id);
+      A.postAigramAPI('/note/aigram/ai/game/record/play', {
+        session_id: gameUuid,
+        event: 'score_beat',
+        config_json: { actions: [{
+          type: 'notify',
+          target_user_id: beaten.id,
+          image: {
+            ref_url: 'https://yinxinghuan.github.io/games/posters/ghost-garden.png',
+            prompt: 'A glowing pastel ghost drifting through a moonlit garden of luminous flowers.',
+          },
+          message: {
+            template: '{sender_name} just out-bloomed you — ' + Math.round(myScore) + ' on Ghost Garden.',
+            variables: ['sender_name'],
+          },
+        }] },
+      });
+    } catch (_) {}
+  }
+
   async function fetchGlobal() {
     if (!A.canRank) return [];
     try {
@@ -4242,7 +4290,7 @@ function showResumeDialog(data) {
   async function fetchFriends() { return []; }
   function openProfile(tid) { openAigramProfile(tid); }
 
-  window.GG_LB = { submitScore, isInAigram, telegramId };
+  window.GG_LB = { submitScore, notifyBeat, isInAigram, telegramId };
 
   // ── Leaderboard UI ────────────────────────────────────────────────────────
   const MEDALS = ['🥇','🥈','🥉'];
