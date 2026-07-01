@@ -717,6 +717,9 @@
     justify-content: center; gap: 12px; padding: 40px 20px;
   }
   .lb-state-icon { font-size: 36px; }
+  .lb-state.download { padding: 36px 20px 42px; }
+  .lb-download { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:0 16px; border-radius:999px; border:1px solid rgba(255,255,255,0.28); background:rgba(255,255,255,0.12); color:inherit; text-decoration:none; font-size:13px; font-weight:700; letter-spacing:0; -webkit-tap-highlight-color:transparent; transition:background .15s, transform .15s; }
+  .lb-download:active { background:rgba(255,255,255,0.18); transform:scale(.97); }
   .lb-state-text { font-size: 14px; color: rgba(255,255,255,0.35); text-align: center; line-height: 1.5; }
   .lb-spinner {
     display: block; width: 28px; height: 28px; border-radius: 50%;
@@ -4287,6 +4290,7 @@ function showResumeDialog(data) {
 
   // ── Leaderboard UI ────────────────────────────────────────────────────────
   const MEDALS = ['🥇','🥈','🥉'];
+  const ALTERU_APP_URL = 'https://apps.apple.com/app/id6769646546';
   const overlay = document.getElementById('lb-overlay');
   const body    = document.getElementById('lb-body');
   const titleEl = document.getElementById('lb-title-text');
@@ -4294,10 +4298,14 @@ function showResumeDialog(data) {
   const isZh = !localStorage.getItem('game_locale') && navigator.language.toLowerCase().startsWith('zh')
              || localStorage.getItem('game_locale') === 'zh';
   const STR = isZh
-    ? { title:'排行榜', me:'我', empty:'暂无记录，快来第一个上榜！' }
-    : { title:'Leaderboard', me:'me', empty:'No records yet. Be the first!' };
+    ? { title:'排行榜', me:'我', empty:'暂无记录，快来第一个上榜！', failed:'加载失败', needLogin:'在 AlterU 中打开即可查看排行榜', downloadAlterU:'下载 AlterU' }
+    : { title:'Leaderboard', me:'me', empty:'No records yet. Be the first!', failed:'Load failed', needLogin:'Open in AlterU to view the leaderboard.', downloadAlterU:'Get AlterU on the App Store' };
 
   if (titleEl) titleEl.textContent = STR.title;
+
+  function renderDownload() {
+    body.innerHTML = `<div class="lb-state download"><span class="lb-state-icon">🏆</span><span class="lb-state-text">${STR.needLogin}</span><a class="lb-download" href="${ALTERU_APP_URL}" target="_blank" rel="noopener noreferrer">${STR.downloadAlterU}</a></div>`;
+  }
 
   function openLB() { overlay.classList.add('show'); loadTab(); }
   function closeLB() { overlay.classList.remove('show'); }
@@ -4310,6 +4318,7 @@ function showResumeDialog(data) {
 
   async function loadTab() {
     body.innerHTML = '<div class="lb-state"><span class="lb-spinner"></span></div>';
+    if (!isInAigram) { renderDownload(); return; }
     try {
       const entries = await fetchGlobal();
       if (entries.length === 0) {
@@ -4331,11 +4340,11 @@ function showResumeDialog(data) {
       }).join('');
       if (isInAigram) {
         body.querySelectorAll('.lb-row.clickable').forEach(row => {
-          row.addEventListener('pointerdown', () => openProfile(row.dataset.tid));
+          row.addEventListener('click', () => openProfile(row.dataset.tid));
         });
       }
     } catch {
-      body.innerHTML = `<div class="lb-state"><span class="lb-state-text">加载失败</span></div>`;
+      body.innerHTML = `<div class="lb-state"><span class="lb-state-text">${STR.failed}</span></div>`;
     }
   }
 
