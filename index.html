@@ -4223,7 +4223,7 @@ function showResumeDialog(data) {
   // is the natural pre-run baseline. notifiedTargets dedupes within session.
   let preRunBest = 0;
   const notifiedTargets = new Set();
-  if (A.canRank && telegramId) {
+  if (A.isInAigram && telegramId) {
     callAigramAPI('/note/aigram/ai/game/rank/score/list/by/session_id?session_id=' + gameUuid, 'GET')
       .then(res => {
         const rows = Array.isArray(res) ? res : (res && res.data) || [];
