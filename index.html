@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+    <script src="./alteru-storage-scope.js" data-alteru-storage-scope data-game-storage-id="54112bb3-9829-4ad1-a012-1c461c689058"></script>
     <meta name="game-uuid" content="54112bb3-9829-4ad1-a012-1c461c689058" />
 
   <meta charset="UTF-8">
@@ -1072,7 +1073,7 @@ window._ggStartTs = Date.now();
     }
   };
   const loc = (()=>{
-    const ov = localStorage.getItem('gg_locale');
+    const ov = alteruLocalStorage.getItem('gg_locale');
     if (ov==='en'||ov==='zh') return ov;
     return navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
   })();
@@ -3360,9 +3361,9 @@ function triggerDeath() {
 }
 
 function showDeadScreen() {
-  const hs = parseInt(localStorage.getItem('gg_best_days') || '0');
+  const hs = parseInt(alteruLocalStorage.getItem('gg_best_days') || '0');
   const isNew = gs.day > hs;
-  if (isNew) localStorage.setItem('gg_best_days', gs.day);
+  if (isNew) alteruLocalStorage.setItem('gg_best_days', gs.day);
   const best = isNew ? gs.day : hs;
 
   document.getElementById('dead-title').textContent = t('deadTitle');
@@ -4100,7 +4101,7 @@ const GG_SAVE_KEY = 'gg_v1_save';
 function saveGame() {
   if (gs.dead || gs.endingShown) { eraseSave(); return; }
   try {
-    localStorage.setItem(GG_SAVE_KEY, JSON.stringify({
+    alteruLocalStorage.setItem(GG_SAVE_KEY, JSON.stringify({
       gs: {
         mood: gs.mood, hunger: gs.hunger, energy: gs.energy,
         fire: gs.fire, totalFire: gs.totalFire, totalHappy: gs.totalHappy,
@@ -4116,12 +4117,12 @@ function saveGame() {
 }
 
 function eraseSave() {
-  localStorage.removeItem(GG_SAVE_KEY);
+  alteruLocalStorage.removeItem(GG_SAVE_KEY);
 }
 
 function loadSave() {
   try {
-    const raw = localStorage.getItem(GG_SAVE_KEY);
+    const raw = alteruLocalStorage.getItem(GG_SAVE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!data.gs || data.gs.dead || !data.dna) return null;
@@ -4296,8 +4297,8 @@ function showResumeDialog(data) {
   const body    = document.getElementById('lb-body');
   const titleEl = document.getElementById('lb-title-text');
 
-  const isZh = !localStorage.getItem('game_locale') && navigator.language.toLowerCase().startsWith('zh')
-             || localStorage.getItem('game_locale') === 'zh';
+  const isZh = !alteruLocalStorage.getItem('game_locale') && navigator.language.toLowerCase().startsWith('zh')
+             || alteruLocalStorage.getItem('game_locale') === 'zh';
   const STR = isZh
     ? { title:'排行榜', me:'我', empty:'暂无记录，快来第一个上榜！', failed:'加载失败', needLogin:'在 AlterU 中打开即可查看排行榜', downloadAlterU:'下载 AlterU' }
     : { title:'Leaderboard', me:'me', empty:'No records yet. Be the first!', failed:'Load failed', needLogin:'Open in AlterU to view the leaderboard.', downloadAlterU:'Get AlterU on the App Store' };
