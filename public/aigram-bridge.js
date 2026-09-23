@@ -36,8 +36,11 @@
     params.get('session_id') ||
     null;
 
-  var isInAigram = !!(apiOrigin && telegramId && telegramId !== '__alteru_guest__');
-  var canRank    = !!gameUuid;
+  // Crazy Games guest builds set this before the bridge loads (see index.html
+  // and src/deployTarget.js). Host query params must not become an Aigram session.
+  var isCrazyGamesBuild = window.__isCrazyGamesBuild === true;
+  var isInAigram = !isCrazyGamesBuild && !!(apiOrigin && telegramId && telegramId !== '__alteru_guest__');
+  var canRank    = isCrazyGamesBuild ? false : !!gameUuid;
 
   function toB64(s)   { return btoa(unescape(encodeURIComponent(s))); }
   function fromB64(s) { return decodeURIComponent(escape(atob(s))); }
