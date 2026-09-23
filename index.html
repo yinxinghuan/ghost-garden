@@ -7,6 +7,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title id="page-title">幽灵庄园</title>
+  <!-- Keep in sync with src/deployTarget.js. Classic script so aigram-bridge sees it immediately. -->
+  <script>window.__isCrazyGamesBuild = "%MODE%" === "crazygames";</script>
   <script src="./aigram-bridge.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;500&display=swap" rel="stylesheet">
@@ -1089,6 +1091,13 @@ window._ggStartTs = Date.now();
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { isCrazyGamesBuild } from './src/deployTarget.js';
+import { renderAlterUDownloadPrompt } from './src/alteruLeaderboardPrompt.js';
+
+if (isCrazyGamesBuild && window.Aigram) {
+  window.Aigram.isInAigram = false;
+  window.Aigram.canRank = false;
+}
 
 // ═══════════════════════════════════════════════════════════
 //  SOUND — Web Audio API 程序音效
@@ -4292,7 +4301,6 @@ function showResumeDialog(data) {
 
   // ── Leaderboard UI ────────────────────────────────────────────────────────
   const MEDALS = ['🥇','🥈','🥉'];
-  const ALTERU_APP_URL = 'https://apps.apple.com/app/id6769646546';
   const overlay = document.getElementById('lb-overlay');
   const body    = document.getElementById('lb-body');
   const titleEl = document.getElementById('lb-title-text');
@@ -4300,13 +4308,17 @@ function showResumeDialog(data) {
   const isZh = !alteruLocalStorage.getItem('game_locale') && navigator.language.toLowerCase().startsWith('zh')
              || alteruLocalStorage.getItem('game_locale') === 'zh';
   const STR = isZh
-    ? { title:'排行榜', me:'我', empty:'暂无记录，快来第一个上榜！', failed:'加载失败', needLogin:'在 AlterU 中打开即可查看排行榜', downloadAlterU:'下载 AlterU' }
-    : { title:'Leaderboard', me:'me', empty:'No records yet. Be the first!', failed:'Load failed', needLogin:'Open in AlterU to view the leaderboard.', downloadAlterU:'Get AlterU on the App Store' };
+    ? { title:'排行榜', me:'我', empty:'暂无记录，快来第一个上榜！', failed:'加载失败', guestScore:'最高分保存在本机，无需登录即可游玩。' }
+    : { title:'Leaderboard', me:'me', empty:'No records yet. Be the first!', failed:'Load failed', guestScore:'Your best score stays on this device. No account is required to play.' };
 
   if (titleEl) titleEl.textContent = STR.title;
 
-  function renderDownload() {
-    body.innerHTML = `<div class="lb-state download"><span class="lb-state-icon">🏆</span><span class="lb-state-text">${STR.needLogin}</span><a class="lb-download" href="${ALTERU_APP_URL}" target="_blank" rel="noopener noreferrer">${STR.downloadAlterU}</a></div>`;
+  function renderLoggedOut() {
+    if (isCrazyGamesBuild) {
+      body.innerHTML = `<div class="lb-state"><span class="lb-state-icon">🏆</span><span class="lb-state-text">${STR.guestScore}</span></div>`;
+      return;
+    }
+    body.innerHTML = renderAlterUDownloadPrompt(isZh);
   }
 
   function openLB() { overlay.classList.add('show'); loadTab(); }
@@ -4320,7 +4332,7 @@ function showResumeDialog(data) {
 
   async function loadTab() {
     body.innerHTML = '<div class="lb-state"><span class="lb-spinner"></span></div>';
-    if (!isInAigram) { renderDownload(); return; }
+    if (!isInAigram) { renderLoggedOut(); return; }
     try {
       const entries = await fetchGlobal();
       if (entries.length === 0) {
